@@ -5,7 +5,8 @@ exports.obtenerEventos = async (req, res) => {
     const [rows] = await db.query('SELECT * FROM eventos ORDER BY fecha DESC');
     res.json(rows);
   } catch (err) {
-    res.status(500).json({ error: 'DB error' });
+    console.error('Error en DB:', err); // <--- mostramos el error en consola
+    res.status(500).json({ error: 'DB error', detalles: err.message });
   }
 };
 
