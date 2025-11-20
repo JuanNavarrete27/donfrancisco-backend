@@ -1,26 +1,28 @@
-// middlewares/auth.js → VERSIÓN FINAL QUE NUNCA MÁS TE VA A ECHAR
+/*
+  middlewares/auth.js - verify JWT in Authorization: Bearer <token>
+  middlewares/auth.js - verifica JWT en Authorization: Bearer <token>
+*/
 const jwt = require('jsonwebtoken');
 
 module.exports = function(req, res, next) {
+module.exports = function (req, res, next) {
   const authHeader = req.headers['authorization'];
-  if (!authHeader?.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No token provided' });
+  if (!authHeader) return res.status(401).json({ error: 'No token provided' });
+
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2) return res.status(401).json({ error: 'Token mal formado' });
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    return res.status(401).json({ error: 'Token mal formado' });
   }
 
-  const token = authHeader.split(' ')[1];
+  const token = parts[1];
 
   jwt.verify(token, process.env.JWT_SECRET || 'changeme', (err, decoded) => {
-    if (err) {
-      console.log('Token inválido o expirado:', err.message);
-      return res.status(401).json({ error: 'Token inválido' });
-    }
+    if (err) return res.status(401).json({ error: 'Token inválido' });
+    req.user = decoded;
+    if (err) return res.status(401).json({ error: 'Token inválido o expirado' });
 
-    // ESTA LÍNEA ES LA QUE SALVA TODO
-    if (!decoded || !decoded.id) {
-      return res.status(401).json({ error: 'Token corrupto' });
-    }
-
-    req.user = decoded;  // ← ahora siempre tiene .id
+    req.user = decoded; // 👈 MUY IMPORTANTE
     next();
   });
 };
