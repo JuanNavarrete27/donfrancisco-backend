@@ -53,29 +53,37 @@ router.put('/change-password', auth, async (req, res) => {
   }
 });
 
-// Subir foto de perfil (base64)
+// Subir foto de perfil (base64 o iconos pre-generados)
 router.put('/foto', auth, async (req, res) => {
   const { foto } = req.body;
 
-  if (!foto || !foto.startsWith('data:image')) {
-    return res.status(400).json({ error: 'Formato de imagen inválido' });
+  if (!foto) {
+    return res.status(400).json({ error: 'Falta la foto' });
   }
 
-  // Opcional: límite de tamaño ~1.5MB
-  const base64Data = foto.split(',')[1] || '';
-  if (base64Data.length > 2_000_000) {
-    return res.status(400).json({ error: 'Imagen demasiado grande (máx 1.5MB)' });
+  // Caso 1: data URL base64 (como antes)
+  const esDataUrl = foto.startsWith('data:image');
+
+  if (esDataUrl) {
+    const base64Data = foto.split(',')[1] || '';
+
+    // Si querés mantener un límite, subilo un poco
+    if (base64Data.length > 5_000_000) {
+      return res.status(400).json({ error: 'Imagen demasiado grande (máx ~3.5MB)' });
+    }
   }
+
+  // Si NO es data:image, igual lo aceptamos (pueden ser iconos fijos, etc.)
+  // Solo lo guardamos tal cual en la columna foto.
 
   try {
     await db.query('UPDATE usuarios SET foto = ? WHERE id = ?', [foto, req.user.id]);
-    res.json({ mensaje: 'Foto actualizada', foto });
+    return res.json({ mensaje: 'Foto actualizada', foto });
   } catch (err) {
     console.error('Error guardando foto:', err);
-    res.status(500).json({ error: 'Error al guardar foto' });
+    return res.status(500).json({ error: 'Error al guardar foto' });
   }
 });
-
 // -------------------------
 // ADMIN
 // -------------------------
