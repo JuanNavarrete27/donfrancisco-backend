@@ -34,6 +34,7 @@ exports.register = async (req, res) => {
 };
 
 // ==================== LOGIN ====================
+// ==================== LOGIN ====================
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -50,14 +51,16 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
+    // ← AQUÍ ESTABA EL ERROR DE SINTAXIS
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
         rol: user.rol,
         nombre: user.nombre || '',
-        apellido: user.apellido || ''
-      },
+        apellido: user.apellido || '',
+        foto: normalizarFoto(user.foto)
+      },                                  // ← CERRAR EL OBJETO AQUÍ
       process.env.JWT_SECRET || 'changeme',
       { expiresIn: '8h' }
     );
@@ -78,7 +81,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: 'Error en la base de datos' });
   }
 };
-
 // ==================== OBTENER MI PERFIL (GET /usuarios/me) ====================
 exports.getMiPerfil = async (req, res) => {
   try {
