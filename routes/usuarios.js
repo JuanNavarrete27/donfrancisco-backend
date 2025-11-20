@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/auth');
-@@ -7,10 +7,15 @@ const ctrl = require('../controllers/usuariosController');
+const ctrl = require('../controllers/usuariosController');
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 
@@ -20,7 +20,7 @@ router.post('/login', ctrl.login);
 router.get('/me', auth, (req, res) => {
   res.json({
     id: req.user.id,
-@@ -21,19 +26,36 @@ router.get('/me', auth, (req, res) => {
+router.get('/me', auth, (req, res) => {
   });
 });
 
@@ -62,7 +62,7 @@ router.put('/change-password', auth, async (req, res) => {
 
     res.json({ mensaje: 'Contraseña actualizada' });
   } catch (err) {
-@@ -42,48 +64,32 @@ router.put('/change-password', auth, async (req, res) => {
+router.put('/change-password', auth, async (req, res) => {
   }
 });
 
