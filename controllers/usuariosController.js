@@ -35,6 +35,7 @@ exports.register = async (req, res) => {
 };
 
 // ==================== LOGIN ====================
+// ==================== LOGIN ====================
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -57,13 +58,13 @@ exports.login = async (req, res) => {
         email: user.email,
         rol: user.rol,
         nombre: user.nombre || '',
-        apellido: user.apellido || '',
-        foto: normalizarFoto(user.foto)
+        apellido: user.apellido || ''
       },
       process.env.JWT_SECRET || 'changeme',
       { expiresIn: '8h' }
     );
 
+    // ← ESTO ES LO QUE FALTABA: DEVOLVER EL USER
     res.json({
       token,
       user: {
@@ -80,7 +81,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: 'Error en la base de datos' });
   }
 };
-
 // ==================== OBTENER MI PERFIL ====================
 exports.getMiPerfil = async (req, res) => {
   try {
