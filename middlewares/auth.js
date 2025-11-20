@@ -1,16 +1,15 @@
-/*
-  middlewares/auth.js - verify JWT in Authorization: Bearer <token>
-  middlewares/auth.js - verifica JWT en Authorization: Bearer <token>
-*/
+// middlewares/auth.js → VERSIÓN 100% FUNCIONAL (NO TOQUES NUNCA MÁS)
 const jwt = require('jsonwebtoken');
 
-module.exports = function(req, res, next) {
 module.exports = function (req, res, next) {
   const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(401).json({ error: 'No token provided' });
+
+  if (!authHeader) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
 
   const parts = authHeader.split(' ');
-  if (parts.length !== 2) return res.status(401).json({ error: 'Token mal formado' });
+
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
     return res.status(401).json({ error: 'Token mal formado' });
   }
@@ -18,11 +17,11 @@ module.exports = function (req, res, next) {
   const token = parts[1];
 
   jwt.verify(token, process.env.JWT_SECRET || 'changeme', (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Token inválido' });
-    req.user = decoded;
-    if (err) return res.status(401).json({ error: 'Token inválido o expirado' });
+    if (err) {
+      return res.status(401).json({ error: 'Token inválido o expirado' });
+    }
 
-    req.user = decoded; // 👈 MUY IMPORTANTE
+    req.user = decoded; // ← acá está tu id, nombre, foto, todo
     next();
   });
 };
