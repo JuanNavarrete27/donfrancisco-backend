@@ -41,6 +41,30 @@ router.put('/change-password', auth, async (req, res) => {
     res.status(500).json({ error: 'Error en servidor' });
   }
 });
+
+// SUBIR FOTO DE PERFIL (base64)
+router.put('/foto', auth, async (req, res) => {
+  const { foto } = req.body; // viene como data:image/jpeg;base64,.....
+
+  // Validación básica
+  if (!foto || !foto.startsWith('data:image')) {
+    return res.status(400).json({ error: 'Formato de imagen inválido' });
+  }
+
+  // Opcional: limitar tamaño (ej: < 1.5MB)
+  const base64Data = foto.split(',')[1];
+  if (base64Data.length > 2_000_000) { // ~1.5MB
+    return res.status(400).json({ error: 'Imagen demasiado grande (máx 1.5MB)' });
+  }
+
+  try {
+    await db.query('UPDATE usuarios SET foto = ? WHERE id = ?', [foto, req.user.id]);
+    res.json({ mensaje: 'Foto actualizada', foto });
+  } catch (err) {
+    console.error('Error guardando foto:', err);
+    res.status(500).json({ error: 'Error al guardar foto' });
+  }
+});
 // === FIN NUEVAS RUTAS ===
 
 router.get('/', auth, soloAdmin, ctrl.listUsers);
