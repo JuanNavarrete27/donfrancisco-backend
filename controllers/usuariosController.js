@@ -1,4 +1,3 @@
-// controllers/usuariosController.js → VERSIÓN FINAL 100% FUNCIONAL
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -35,7 +34,6 @@ exports.register = async (req, res) => {
 };
 
 // ==================== LOGIN ====================
-// ==================== LOGIN ====================
 exports.login = async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -58,13 +56,13 @@ exports.login = async (req, res) => {
         email: user.email,
         rol: user.rol,
         nombre: user.nombre || '',
-        apellido: user.apellido || ''
+        apellido: user.apellido || '',
+        foto: normalizarFoto(user.foto)
       },
       process.env.JWT_SECRET || 'changeme',
       { expiresIn: '8h' }
     );
 
-    // ← ESTO ES LO QUE FALTABA: DEVOLVER EL USER
     res.json({
       token,
       user: {
@@ -81,14 +79,17 @@ exports.login = async (req, res) => {
     res.status(500).json({ error: 'Error en la base de datos' });
   }
 };
-// ==================== OBTENER MI PERFIL ====================
+
+// ==================== GET MI PERFIL ====================
 exports.getMiPerfil = async (req, res) => {
   try {
     const [rows] = await db.query(
       'SELECT id, nombre, apellido, email, rol, foto, created_at FROM usuarios WHERE id = ?',
       [req.user.id]
     );
-    if (rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
     const user = rows[0];
     res.json({
       id: user.id,
@@ -126,7 +127,10 @@ exports.actualizarFoto = async (req, res) => {
 exports.listUsers = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT id, nombre, apellido, email, rol, foto, created_at FROM usuarios');
-    const usuarios = rows.map(u => ({ ...u, foto: normalizarFoto(u.foto) }));
+    const usuarios = rows.map(u => ({
+      ...u,
+      foto: normalizarFoto(u.foto)
+    }));
     res.json(usuarios);
   } catch (err) {
     console.error('Error en listUsers:', err);
@@ -141,7 +145,9 @@ exports.getUser = async (req, res) => {
       'SELECT id, nombre, apellido, email, rol, foto, created_at FROM usuarios WHERE id = ?',
       [req.params.id]
     );
-    if (rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
     const user = rows[0];
     user.foto = normalizarFoto(user.foto);
     res.json(user);
@@ -156,30 +162,25 @@ exports.updateUser = async (req, res) => {
   const { nombre, apellido, email, password, rol, foto } = req.body;
   const campos = [];
   const valores = [];
-
   if (nombre !== undefined) { campos.push('nombre = ?'); valores.push(nombre); }
   if (apellido !== undefined) { campos.push('apellido = ?'); valores.push(apellido); }
   if (email !== undefined) { campos.push('email = ?'); valores.push(email); }
   if (rol !== undefined) { campos.push('rol = ?'); valores.push(rol); }
   if (foto !== undefined) { campos.push('foto = ?'); valores.push(normalizarFoto(foto)); }
-
   try {
     if (password) {
       const hash = bcrypt.hashSync(password, 10);
       campos.push('password = ?');
       valores.push(hash);
     }
-
     if (campos.length === 0) {
       return res.status(400).json({ error: 'Nada para actualizar' });
     }
-
     valores.push(req.params.id);
     await db.query(
-      `UPDATE usuarios SET ${campos.join(', ')} WHERE id = ?`,  // ← COMILLA CERRADA
+      `UPDATE usuarios SET ${campos.join(', ')} WHERE id = ?`,  // ← LA COMILLA ESTABA MAL, AHORA ESTÁ BIEN
       valores
     );
-
     res.json({ mensaje: 'Usuario actualizado' });
   } catch (err) {
     console.error('Error en updateUser:', err);
