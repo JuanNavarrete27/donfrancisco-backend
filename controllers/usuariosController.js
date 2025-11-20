@@ -12,7 +12,7 @@ function normalizarFoto(foto) {
 // ==================== REGISTER ====================
 exports.register = async (req, res) => {
   const { nombre, apellido, email, password, rol } = req.body;
-@@ -17,8 +25,10 @@ exports.register = async (req, res) => {
+  exports.register = async (req, res) => {
     }
 
     const hash = bcrypt.hashSync(password, 10);
@@ -24,7 +24,7 @@ exports.register = async (req, res) => {
       [nombre || '', apellido || '', email, hash, rol || 'user']
     );
 
-@@ -50,26 +60,29 @@ exports.login = async (req, res) => {
+exports.login = async (req, res) => {
     }
 
     const token = jwt.sign(
@@ -65,7 +65,7 @@ exports.register = async (req, res) => {
   } catch (err) {
     console.error('Error en login:', err);
     res.status(500).json({ error: 'Error en la base de datos' });
-@@ -79,8 +92,14 @@ exports.login = async (req, res) => {
+exports.login = async (req, res) => {
 // ==================== LISTAR USUARIOS (solo admin) ====================
 exports.listUsers = async (req, res) => {
   try {
@@ -82,7 +82,7 @@ exports.listUsers = async (req, res) => {
   } catch (err) {
     console.error('Error en listUsers:', err);
     res.status(500).json({ error: 'Error en la base de datos' });
-@@ -91,13 +110,18 @@ exports.listUsers = async (req, res) => {
+exports.listUsers = async (req, res) => {
 exports.getUser = async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -103,7 +103,7 @@ exports.getUser = async (req, res) => {
   } catch (err) {
     console.error('Error en getUser:', err);
     res.status(500).json({ error: 'Error en la base de datos' });
-@@ -106,7 +130,7 @@ exports.getUser = async (req, res) => {
+exports.getUser = async (req, res) => {
 
 // ==================== ACTUALIZAR USUARIO ====================
 exports.updateUser = async (req, res) => {
@@ -112,7 +112,7 @@ exports.updateUser = async (req, res) => {
   const campos = [];
   const valores = [];
 
-@@ -115,6 +139,12 @@ exports.updateUser = async (req, res) => {
+exports.updateUser = async (req, res) => {
   if (email !== undefined) { campos.push('email = ?'); valores.push(email); }
   if (rol !== undefined) { campos.push('rol = ?'); valores.push(rol); }
 
@@ -125,7 +125,7 @@ exports.updateUser = async (req, res) => {
   try {
     if (password) {
       const hash = bcrypt.hashSync(password, 10);
-@@ -127,6 +157,7 @@ exports.updateUser = async (req, res) => {
+exports.updateUser = async (req, res) => {
     }
 
     valores.push(req.params.id);
