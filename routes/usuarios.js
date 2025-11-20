@@ -17,16 +17,30 @@ router.post('/login', ctrl.login);
 // USUARIO AUTENTICADO
 // -------------------------
 
-// Obtener mi perfil
-router.get('/me', auth, (req, res) => {
-  res.json({
-    id: req.user.id,
-    nombre: req.user.nombre || '',
-    apellido: req.user.apellido || '',
-    email: req.user.email,
-    rol: req.user.rol,
-    foto: req.user.foto || null
-  });
+router.get('/me', auth, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      'SELECT id, nombre, apellido, email, rol, foto FROM usuarios WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const u = rows[0];
+    res.json({
+      id: u.id,
+      nombre: u.nombre || '',
+      apellido: u.apellido || '',
+      email: u.email,
+      rol: u.rol,
+      foto: u.foto || null
+    });
+  } catch (err) {
+    console.error('Error en /usuarios/me:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
 });
 
 // Cambiar contraseña
