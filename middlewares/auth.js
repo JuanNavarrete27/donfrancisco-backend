@@ -1,18 +1,26 @@
-// middlewares/auth.js → TU VERSIÓN QUE SIEMPRE FUNCIONÓ
+// middlewares/auth.js → VERSIÓN FINAL QUE NUNCA MÁS TE VA A ECHAR
 const jwt = require('jsonwebtoken');
 
 module.exports = function(req, res, next) {
   const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(401).json({ error: 'No token provided' });
+  if (!authHeader?.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
 
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2) return res.status(401).json({ error: 'Token mal formado' });
-
-  const token = parts[1];
+  const token = authHeader.split(' ')[1];
 
   jwt.verify(token, process.env.JWT_SECRET || 'changeme', (err, decoded) => {
-    if (err) return res.status(401).json({ error: 'Token inválido' });
-    req.user = decoded;  // ← decoded tiene: id, nombre, apellido, email, rol
+    if (err) {
+      console.log('Token inválido o expirado:', err.message);
+      return res.status(401).json({ error: 'Token inválido' });
+    }
+
+    // ESTA LÍNEA ES LA QUE SALVA TODO
+    if (!decoded || !decoded.id) {
+      return res.status(401).json({ error: 'Token corrupto' });
+    }
+
+    req.user = decoded;  // ← ahora siempre tiene .id
     next();
   });
 };
