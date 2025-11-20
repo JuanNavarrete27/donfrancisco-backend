@@ -65,6 +65,23 @@ router.put('/foto', auth, async (req, res) => {
     res.status(500).json({ error: 'Error al guardar foto' });
   }
 });
+
+
+router.put('/foto', auth, async (req, res) => {
+  const { foto } = req.body;
+
+  if (!foto || !foto.startsWith('data:image')) {
+    return res.status(400).json({ error: 'Imagen inválida' });
+  }
+
+  try {
+    await db.query('UPDATE usuarios SET foto = ? WHERE id = ?', [foto, req.user.id]);
+    res.json({ mensaje: 'Foto actualizada', foto });
+  } catch (err) {
+    console.error('Error al guardar foto:', err);
+    res.status(500).json({ error: 'Error del servidor' });
+  }
+});
 // === FIN NUEVAS RUTAS ===
 
 router.get('/', auth, soloAdmin, ctrl.listUsers);
