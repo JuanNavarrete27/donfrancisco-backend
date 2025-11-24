@@ -14,8 +14,7 @@ const app = express();
 app.use(cors({
   origin: [
     'http://localhost:4200',
-    'https://bentasca.com',
-    'https://bentasca-backend2.onrender.com'
+    'https://bentasca.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -23,8 +22,9 @@ app.use(cors({
   exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
 }));
 
-// Asegúrate de que esto esté ANTES de las rutas
+// Debe seguir estando ANTES de las rutas
 app.options('*', cors());
+
 /* ============================================================
    JSON PARSER (ANTES DE LAS RUTAS)
    ============================================================ */
