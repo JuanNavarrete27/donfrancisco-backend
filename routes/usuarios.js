@@ -16,8 +16,6 @@ router.post('/login', ctrl.login);
 // -------------------------
 // USUARIO AUTENTICADO
 // -------------------------
-
-// Obtener mi perfil SIEMPRE desde la DB
 router.get('/me', auth, async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -45,7 +43,9 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// Cambiar contraseña
+// -------------------------
+// CAMBIAR CONTRASEÑA
+// -------------------------
 router.put('/change-password', auth, async (req, res) => {
   const { actual, nueva } = req.body;
   if (!actual || !nueva) {
@@ -70,17 +70,20 @@ router.put('/change-password', auth, async (req, res) => {
 });
 
 // -------------------------
-// ACTUALIZAR FOTO DE PERFIL (solo nombre de avatar)
+// ACTUALIZAR FOTO
 // -------------------------
 router.put('/actualizar-foto', auth, async (req, res) => {
-  const { foto } = req.body;
+  let { foto } = req.body;
 
-  // Validación básica
   if (!foto) {
     return res.status(400).json({ error: 'Debe enviar el nombre del avatar' });
   }
 
-  // Lista de avatares válidos (coincide con los que tenés en assets/avatars)
+  // Normalizar: agregar .jpg si el front lo envía mal
+  if (!foto.endsWith('.jpg')) {
+    foto = foto + '.jpg';
+  }
+
   const AVATARS_VALIDOS = ['avatar1.jpg', 'avatar2.jpg', 'avatar3.jpg', 'avatar4.jpg'];
 
   if (!AVATARS_VALIDOS.includes(foto)) {
