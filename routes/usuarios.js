@@ -81,7 +81,7 @@ router.put('/actualizar-foto', auth, async (req, res) => {
   }
 
   // Lista de avatares válidos (coincide con los que tenés en assets/avatars)
-  const AVATARS_VALIDOS = ['avatar1.png', 'avatar2.png', 'avatar3.png', 'avatar4.png'];
+  const AVATARS_VALIDOS = ['avatar1.jpg', 'avatar2.jpg', 'avatar3.jpg', 'avatar4.jpg'];
 
   if (!AVATARS_VALIDOS.includes(foto)) {
     return res.status(400).json({ error: 'Avatar inválido' });
