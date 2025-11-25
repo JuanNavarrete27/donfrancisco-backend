@@ -5,12 +5,14 @@ const mailer = new MailerSend({
   apiKey: process.env.MAILERSEND_API_KEY,
 });
 
+const TEMPLATE_ID = "0r83ql3yx7pgzw1j"; // Tu template verificado
+
 exports.crearReserva = async (req, res) => {
   try {
     const { nombre, telefono, email, fecha, hora, cancha, duracion, tipo, mensaje } = req.body;
 
     const sql = `
-      INSERT INTO reservas 
+      INSERT INTO reservas
       (nombre, telefono, email, fecha, hora, cancha, duracion, tipo, mensaje)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
@@ -40,57 +42,51 @@ exports.crearReserva = async (req, res) => {
       throw err;
     }
 
-    //----------------------------------------------------
-    // HTML del email
-    //----------------------------------------------------
+    // Datos que van a reemplazar las variables {{ }} del template
+    const personalizationData = {
+      nombre,
+      fecha,
+      hora,
+      cancha: cancha || 'Cancha principal',
+      duracion: duracion || 1,
+      personas: duracion, // si en el futuro cambias el nombre de variable
+      telefono,
+      email: email || '',
+      mensaje: mensaje || 'Sin mensaje',
+    };
 
-    const htmlEmail = `
-      <div style="font-family: Arial; padding: 20px;">
-        <h2>Reserva confirmada</h2>
-        <p><strong>Nombre:</strong> ${nombre}</p>
-        <p><strong>Fecha:</strong> ${fecha}</p>
-        <p><strong>Hora:</strong> ${hora}</p>
-        <p><strong>Cancha:</strong> ${cancha}</p>
-        <p><strong>Duración:</strong> ${duracion} hora/s</p>
-        ${mensaje ? `<p><strong>Mensaje:</strong> ${mensaje}</p>` : ""}
-        <hr>
-        <p>Gracias por reservar en Bentasca ⚽</p>
-      </div>
-    `;
-
-    //----------------------------------------------------
-    // Envío al cliente (si ingresó email)
-    //----------------------------------------------------
-
+    // Envío al cliente (solo si puso email)
     if (email) {
-      const from = new Sender(process.env.MAILERSEND_FROM, "Bentasca");
-      const to = [new Recipient(email, nombre)];
+      const emailParamsCliente = new EmailParams()
+        .setFrom(new Sender(process.env.MAILERSEND_FROM, "Bentasca"))
+        .setTo([new Recipient(email, nombre)])
+        .setReplyTo(process.env.MAILERSEND_ADMIN) // para que responda al restaurante
+        .setSubject("¡Tu reserva en Bentasca está confirmada!")
+        .setTemplateId(TEMPLATE_ID)
+        .setPersonalization([
+          {
+            email: email,
+            data: personalizationData
+          }
+        ]);
 
-      const emailParams = new EmailParams()
-        .setFrom(from)
-        .setTo(to)
-        .setSubject("Reserva confirmada ✔")
-        .setHtml(htmlEmail);
-
-      await mailer.email.send(emailParams);
+      await mailer.email.send(emailParamsCliente);
     }
 
-    //----------------------------------------------------
-    // Envío al administrador
-    //----------------------------------------------------
+    // Envío al administrador (siempre)
+    const emailParamsAdmin = new EmailParams()
+      .setFrom(new Sender(process.env.MAILERSEND_FROM, "Bentasca"))
+      .setTo([new Recipient(process.env.MAILERSEND_ADMIN, "Admin Bentasca")])
+      .setSubject(`Nueva reserva - ${nombre} - ${fecha} ${hora}`)
+      .setTemplateId(TEMPLATE_ID)
+      .setPersonalization([
+        {
+          email: process.env.MAILERSEND_ADMIN,
+          data: personalizationData
+        }
+      ]);
 
-    const fromAdmin = new Sender(process.env.MAILERSEND_FROM, "Bentasca");
-    const toAdmin = [new Recipient(process.env.MAILERSEND_ADMIN, "Admin")];
-
-    const adminParams = new EmailParams()
-      .setFrom(fromAdmin)
-      .setTo(toAdmin)
-      .setSubject("Nueva reserva recibida")
-      .setHtml(htmlEmail);
-
-    await mailer.email.send(adminParams);
-
-    //----------------------------------------------------
+    await mailer.email.send(emailParamsAdmin);
 
     res.json({
       ok: true,
