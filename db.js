@@ -1,8 +1,8 @@
 /*
-  db.js - mysql2 pool connection (CORREGIDO)
+  db.js - mysql2/promise pool connection (CORREGIDO)
 */
 require('dotenv').config();
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise'); // 👈 ESTA ES LA CORRECCIÓN CLAVE
 
 const pool = mysql.createPool({
   host: process.env.MYSQL_ADDON_HOST || 'b99rg5klb9i5qhzdwcy4-mysql.services.clever-cloud.com',
@@ -15,5 +15,5 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// 🚀 Exportamos el pool con promesas (correcto)
-module.exports = pool.promise();
+// Exportar pool directamente (ya es basado en promesas)
+module.exports = pool;
