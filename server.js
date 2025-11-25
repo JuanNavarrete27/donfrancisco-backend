@@ -1,11 +1,12 @@
 /*
-  server.js — versión con AVATARS ESTÁTICOS
+  server.js — versión con AVATARS ESTÁTICOS + reservas
 */
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 const db = require('./db');
+const reservasRouter = require('./routes/reservas');
 
 const app = express();
 
@@ -23,13 +24,17 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar']
 }));
-
 app.options('*', cors());
 
 /* ============================================================
    BODY PARSER
    ============================================================ */
 app.use(express.json({ limit: '10mb' }));
+
+/* ============================================================
+   RUTA RESERVAS
+   ============================================================ */
+app.use('/reservas', reservasRouter);
 
 /* ============================================================
    ARCHIVOS ESTÁTICOS — SERVIR AVATARS
