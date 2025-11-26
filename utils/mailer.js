@@ -57,6 +57,7 @@ async function enviarMailReserva(reserva) {
         await sgMail.send({
           to: reserva.email,
           from: process.env.FROM_EMAIL,
+          subject: "Reserva BENTASCA",
           templateId: TEMPLATE_ID,
           dynamic_template_data: {
             nombre: reserva.nombre,
@@ -82,6 +83,7 @@ async function enviarMailReserva(reserva) {
         await sgMail.send({
           to: process.env.ADMIN_EMAIL,
           from: process.env.FROM_EMAIL,
+          subject: "Reserva BENTASCA",
           templateId: TEMPLATE_ID,
           dynamic_template_data: {
             nombre: reserva.nombre,
