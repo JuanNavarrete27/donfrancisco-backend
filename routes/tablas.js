@@ -1,17 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const tablasController = require('../controllers/tablasController');
+const auth = require('../middlewares/auth');
+const soloAdmin = require('../middlewares/soloAdmin');
+const ctrl = require('../controllers/tablasController');
 
-// GET tabla (anual o clausura)
-router.get('/:tipo', tablasController.obtenerTabla);
+// ANUAL
+router.get('/anual', ctrl.obtenerTablaAnual);
+router.post('/anual', auth, soloAdmin, ctrl.agregarEquipoAnual);
+router.put('/anual/:id', auth, soloAdmin, ctrl.actualizarEquipoAnual);
+router.delete('/anual/:id', auth, soloAdmin, ctrl.eliminarEquipoAnual);
 
-// POST agregar equipo
-router.post('/', tablasController.agregarEquipo);
-
-// PUT actualizar equipo
-router.put('/:id', tablasController.actualizarEquipo);
-
-// DELETE eliminar equipo
-router.delete('/:id', tablasController.eliminarEquipo);
+// CLAUSURA
+router.get('/clausura', ctrl.obtenerTablaClausura);
+router.post('/clausura', auth, soloAdmin, ctrl.agregarEquipoClausura);
+router.put('/clausura/:id', auth, soloAdmin, ctrl.actualizarEquipoClausura);
+router.delete('/clausura/:id', auth, soloAdmin, ctrl.eliminarEquipoClausura);
 
 module.exports = router;
