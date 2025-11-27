@@ -44,7 +44,13 @@ exports.agregarEquipo = async (req, res) => {
     await db.query(
       `INSERT INTO ${tabla} (equipo, puntos, goles_favor, goles_contra, posicion)
        VALUES (?, ?, ?, ?, ?)`,
-      [equipo, puntos || 0, goles_favor || 0, goles_contra || 0, posicion || null]
+      [
+        equipo,
+        puntos ?? 0,
+        goles_favor ?? 0,
+        goles_contra ?? 0,
+        posicion ?? null
+      ]
     );
 
     res.json({ mensaje: 'Equipo agregado con éxito' });
@@ -69,7 +75,8 @@ exports.actualizarEquipo = async (req, res) => {
     const tabla = tipo === 'anual' ? 'tabla_anual' : 'tabla_clausura';
 
     await db.query(
-      `UPDATE ${tabla} SET equipo=?, puntos=?, goles_favor=?, goles_contra=?, posicion=?
+      `UPDATE ${tabla}
+       SET equipo=?, puntos=?, goles_favor=?, goles_contra=?, posicion=?
        WHERE id=?`,
       [equipo, puntos, goles_favor, goles_contra, posicion, id]
     );
