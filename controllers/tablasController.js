@@ -37,16 +37,27 @@ exports.agregarEquipoAnual = async (req, res) => {
   try {
     const { equipo, puntos, goles_favor, goles_contra, posicion } = req.body;
 
-    if (!equipo) {
-      return res.status(400).json({ error: 'El nombre del equipo es obligatorio' });
+    if (!equipo || equipo.trim() === "") {
+      return res
+        .status(400)
+        .json({ error: 'El nombre del equipo es obligatorio' });
     }
 
     await db.query(
-      'INSERT INTO tabla_anual (equipo, puntos, goles_favor, goles_contra, posicion) VALUES (?, ?, ?, ?, ?)',
-      [equipo, puntos || 0, goles_favor || 0, goles_contra || 0, posicion || null]
+      `INSERT INTO tabla_anual 
+        (equipo, puntos, goles_favor, goles_contra, posicion)
+       VALUES (?, ?, ?, ?, ?)`,
+      [
+        equipo,
+        puntos ?? 0,
+        goles_favor ?? 0,
+        goles_contra ?? 0,
+        posicion ?? null
+      ]
     );
 
-    res.json({ mensaje: 'Equipo agregado a tabla anual' });
+    // 🔥 RESPUESTA QUE ESPERA EL FRONT
+    res.json({ mensaje: 'Equipo agregado', ok: true });
   } catch (err) {
     console.error('Error en agregarEquipoAnual:', err);
     res.status(500).json({ error: 'Error al agregar equipo' });
@@ -62,11 +73,21 @@ exports.actualizarEquipoAnual = async (req, res) => {
     const { equipo, puntos, goles_favor, goles_contra, posicion } = req.body;
 
     await db.query(
-      'UPDATE tabla_anual SET equipo=?, puntos=?, goles_favor=?, goles_contra=?, posicion=? WHERE id=?',
-      [equipo, puntos, goles_favor, goles_contra, posicion, id]
+      `UPDATE tabla_anual 
+       SET equipo=?, puntos=?, goles_favor=?, goles_contra=?, posicion=? 
+       WHERE id=?`,
+      [
+        equipo,
+        puntos ?? 0,
+        goles_favor ?? 0,
+        goles_contra ?? 0,
+        posicion ?? null,
+        id
+      ]
     );
 
-    res.json({ mensaje: 'Equipo actualizado' });
+    // 🔥 RESPUESTA QUE ESPERA EL FRONT
+    res.json({ mensaje: 'Equipo actualizado', ok: true });
   } catch (err) {
     console.error('Error en actualizarEquipoAnual:', err);
     res.status(500).json({ error: 'Error al actualizar equipo' });
@@ -82,7 +103,8 @@ exports.eliminarEquipoAnual = async (req, res) => {
 
     await db.query('DELETE FROM tabla_anual WHERE id=?', [id]);
 
-    res.json({ mensaje: 'Equipo eliminado correctamente' });
+    // 🔥 RESPUESTA QUE ESPERA EL FRONT
+    res.json({ mensaje: 'Equipo eliminado', ok: true });
   } catch (err) {
     console.error('Error en eliminarEquipoAnual:', err);
     res.status(500).json({ error: 'Error al eliminar equipo' });
