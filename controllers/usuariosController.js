@@ -60,10 +60,16 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
+    // ==== TOKEN COMPLETO (ahora sí funciona para reservas automáticas) ====
     const token = jwt.sign(
       {
         id: user.id,
-        rol: user.rol
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.email,
+        telefono: user.telefono,
+        rol: user.rol,
+        foto: normalizarFoto(user.foto)
       },
       process.env.JWT_SECRET || 'changeme',
       { expiresIn: '8h' }
