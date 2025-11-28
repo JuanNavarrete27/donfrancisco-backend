@@ -3,7 +3,7 @@ const db = require('../db');
 // ======================================================
 // FUNCIONES AUXILIARES
 // ======================================================
-function calcularDiferencia(gf, gc) {
+function calculateDiff(gf, gc) {
   return (gf ?? 0) - (gc ?? 0);
 }
 
@@ -40,12 +40,10 @@ exports.agregarEquipoAnual = async (req, res) => {
       return res.status(400).json({ error: 'El nombre del equipo es obligatorio' });
     }
 
-    const dif = calcularDiferencia(goles_favor, goles_contra);
-
     await db.query(
       `INSERT INTO tabla_anual 
-       (equipo, puntos, pj, pg, pe, pp, goles_favor, goles_contra, dif, posicion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (equipo, puntos, pj, pg, pe, pp, goles_favor, goles_contra, posicion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         equipo,
         puntos ?? 0,
@@ -55,7 +53,6 @@ exports.agregarEquipoAnual = async (req, res) => {
         pp ?? 0,
         goles_favor ?? 0,
         goles_contra ?? 0,
-        dif,
         posicion ?? null
       ]
     );
@@ -83,11 +80,9 @@ exports.actualizarEquipoAnual = async (req, res) => {
       posicion
     } = req.body;
 
-    const dif = calcularDiferencia(goles_favor, goles_contra);
-
     await db.query(
       `UPDATE tabla_anual
-       SET equipo=?, puntos=?, pj=?, pg=?, pe=?, pp=?, goles_favor=?, goles_contra=?, dif=?, posicion=?
+       SET equipo=?, puntos=?, pj=?, pg=?, pe=?, pp=?, goles_favor=?, goles_contra=?, posicion=?
        WHERE id=?`,
       [
         equipo,
@@ -98,7 +93,6 @@ exports.actualizarEquipoAnual = async (req, res) => {
         pp,
         goles_favor,
         goles_contra,
-        dif,
         posicion,
         id
       ]
@@ -124,10 +118,8 @@ exports.eliminarEquipoAnual = async (req, res) => {
   }
 };
 
-
-
 // ======================================================
-// CLAUSURA (MISMO FORMATO)
+// CLAUSURA
 // ======================================================
 exports.obtenerTablaClausura = async (req, res) => {
   try {
@@ -159,12 +151,10 @@ exports.agregarEquipoClausura = async (req, res) => {
       return res.status(400).json({ error: 'El nombre del equipo es obligatorio' });
     }
 
-    const dif = calcularDiferencia(goles_favor, goles_contra);
-
     await db.query(
       `INSERT INTO tabla_clausura 
-       (equipo, puntos, pj, pg, pe, pp, goles_favor, goles_contra, dif, posicion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       (equipo, puntos, pj, pg, pe, pp, goles_favor, goles_contra, posicion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         equipo,
         puntos ?? 0,
@@ -174,7 +164,6 @@ exports.agregarEquipoClausura = async (req, res) => {
         pp ?? 0,
         goles_favor ?? 0,
         goles_contra ?? 0,
-        dif,
         posicion ?? null
       ]
     );
@@ -202,11 +191,9 @@ exports.actualizarEquipoClausura = async (req, res) => {
       posicion
     } = req.body;
 
-    const dif = calcularDiferencia(goles_favor, goles_contra);
-
     await db.query(
       `UPDATE tabla_clausura
-       SET equipo=?, puntos=?, pj=?, pg=?, pe=?, pp=?, goles_favor=?, goles_contra=?, dif=?, posicion=?
+       SET equipo=?, puntos=?, pj=?, pg=?, pe=?, pp=?, goles_favor=?, goles_contra=?, posicion=?
        WHERE id=?`,
       [
         equipo,
@@ -217,7 +204,6 @@ exports.actualizarEquipoClausura = async (req, res) => {
         pp,
         goles_favor,
         goles_contra,
-        dif,
         posicion,
         id
       ]
