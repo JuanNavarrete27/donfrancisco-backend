@@ -18,7 +18,9 @@ exports.crearReservaInvitado = async (req, res) => {
     if (mm !== 0) {
       return res.status(400).json({ ok: false, mensaje: "Las reservas deben ser a en punto (HH:00)" });
     }
-    if (hh < 19 || hh > 22) {
+
+    // 🔥 Corregido: ahora permite desde 19:00 hasta 23:00
+    if (hh < 19 || hh > 23) {
       return res.status(400).json({ ok: false, mensaje: "El horario permitido es de 19:00 a 23:00" });
     }
 
@@ -88,7 +90,8 @@ exports.crearReservaConUsuario = async (req, res) => {
       return res.status(400).json({ ok: false, mensaje: "Las reservas deben ser a en punto (HH:00)" });
     }
 
-    if (hh < 19 || hh > 22) {
+    // 🔥 Corregido acá también
+    if (hh < 19 || hh > 23) {
       return res.status(400).json({ ok: false, mensaje: "El horario permitido es de 19:00 a 23:00" });
     }
 
@@ -119,7 +122,6 @@ exports.crearReservaConUsuario = async (req, res) => {
 
     const reservaId = result.insertId;
 
-    // Enviar email
     try {
       await enviarMailReserva({
         nombre: user.nombre,
