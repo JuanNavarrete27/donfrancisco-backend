@@ -1,6 +1,13 @@
 const db = require('../db');
 
 // ======================================================
+// FUNCIONES AUXILIARES
+// ======================================================
+function calcularDiferencia(gf, gc) {
+  return (gf ?? 0) - (gc ?? 0);
+}
+
+// ======================================================
 // ANUAL
 // ======================================================
 exports.obtenerTablaAnual = async (req, res) => {
@@ -17,20 +24,38 @@ exports.obtenerTablaAnual = async (req, res) => {
 
 exports.agregarEquipoAnual = async (req, res) => {
   try {
-    const { equipo, puntos, goles_favor, goles_contra, posicion } = req.body;
+    const {
+      equipo,
+      puntos,
+      pj,
+      pg,
+      pe,
+      pp,
+      goles_favor,
+      goles_contra,
+      posicion
+    } = req.body;
 
     if (!equipo) {
       return res.status(400).json({ error: 'El nombre del equipo es obligatorio' });
     }
 
+    const dif = calcularDiferencia(goles_favor, goles_contra);
+
     await db.query(
-      `INSERT INTO tabla_anual (equipo, puntos, goles_favor, goles_contra, posicion)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO tabla_anual 
+       (equipo, puntos, pj, pg, pe, pp, goles_favor, goles_contra, dif, posicion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         equipo,
         puntos ?? 0,
+        pj ?? 0,
+        pg ?? 0,
+        pe ?? 0,
+        pp ?? 0,
         goles_favor ?? 0,
         goles_contra ?? 0,
+        dif,
         posicion ?? null
       ]
     );
@@ -44,14 +69,39 @@ exports.agregarEquipoAnual = async (req, res) => {
 
 exports.actualizarEquipoAnual = async (req, res) => {
   try {
-    const { equipo, puntos, goles_favor, goles_contra, posicion } = req.body;
     const { id } = req.params;
+
+    const {
+      equipo,
+      puntos,
+      pj,
+      pg,
+      pe,
+      pp,
+      goles_favor,
+      goles_contra,
+      posicion
+    } = req.body;
+
+    const dif = calcularDiferencia(goles_favor, goles_contra);
 
     await db.query(
       `UPDATE tabla_anual
-       SET equipo=?, puntos=?, goles_favor=?, goles_contra=?, posicion=?
+       SET equipo=?, puntos=?, pj=?, pg=?, pe=?, pp=?, goles_favor=?, goles_contra=?, dif=?, posicion=?
        WHERE id=?`,
-      [equipo, puntos, goles_favor, goles_contra, posicion, id]
+      [
+        equipo,
+        puntos,
+        pj,
+        pg,
+        pe,
+        pp,
+        goles_favor,
+        goles_contra,
+        dif,
+        posicion,
+        id
+      ]
     );
 
     res.json({ mensaje: 'Equipo anual actualizado' });
@@ -77,7 +127,7 @@ exports.eliminarEquipoAnual = async (req, res) => {
 
 
 // ======================================================
-// CLAUSURA
+// CLAUSURA (MISMO FORMATO)
 // ======================================================
 exports.obtenerTablaClausura = async (req, res) => {
   try {
@@ -93,20 +143,38 @@ exports.obtenerTablaClausura = async (req, res) => {
 
 exports.agregarEquipoClausura = async (req, res) => {
   try {
-    const { equipo, puntos, goles_favor, goles_contra, posicion } = req.body;
+    const {
+      equipo,
+      puntos,
+      pj,
+      pg,
+      pe,
+      pp,
+      goles_favor,
+      goles_contra,
+      posicion
+    } = req.body;
 
     if (!equipo) {
       return res.status(400).json({ error: 'El nombre del equipo es obligatorio' });
     }
 
+    const dif = calcularDiferencia(goles_favor, goles_contra);
+
     await db.query(
-      `INSERT INTO tabla_clausura (equipo, puntos, goles_favor, goles_contra, posicion)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO tabla_clausura 
+       (equipo, puntos, pj, pg, pe, pp, goles_favor, goles_contra, dif, posicion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         equipo,
         puntos ?? 0,
+        pj ?? 0,
+        pg ?? 0,
+        pe ?? 0,
+        pp ?? 0,
         goles_favor ?? 0,
         goles_contra ?? 0,
+        dif,
         posicion ?? null
       ]
     );
@@ -120,14 +188,39 @@ exports.agregarEquipoClausura = async (req, res) => {
 
 exports.actualizarEquipoClausura = async (req, res) => {
   try {
-    const { equipo, puntos, goles_favor, goles_contra, posicion } = req.body;
     const { id } = req.params;
+
+    const {
+      equipo,
+      puntos,
+      pj,
+      pg,
+      pe,
+      pp,
+      goles_favor,
+      goles_contra,
+      posicion
+    } = req.body;
+
+    const dif = calcularDiferencia(goles_favor, goles_contra);
 
     await db.query(
       `UPDATE tabla_clausura
-       SET equipo=?, puntos=?, goles_favor=?, goles_contra=?, posicion=?
+       SET equipo=?, puntos=?, pj=?, pg=?, pe=?, pp=?, goles_favor=?, goles_contra=?, dif=?, posicion=?
        WHERE id=?`,
-      [equipo, puntos, goles_favor, goles_contra, posicion, id]
+      [
+        equipo,
+        puntos,
+        pj,
+        pg,
+        pe,
+        pp,
+        goles_favor,
+        goles_contra,
+        dif,
+        posicion,
+        id
+      ]
     );
 
     res.json({ mensaje: 'Equipo clausura actualizado' });
