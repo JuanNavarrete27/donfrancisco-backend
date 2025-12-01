@@ -161,3 +161,45 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ error: 'Error eliminando usuario' });
   }
 };
+
+// ====================== CAMBIAR PASSWORD ======================
+exports.cambiarPassword = async (req, res) => {
+  try {
+    const userId = req.user.id; // viene del middleware auth
+    const { actual, nueva } = req.body;
+
+    if (!actual || !nueva) {
+      return res.status(400).json({ error: 'Faltan datos' });
+    }
+
+    // Buscar usuario
+    const [rows] = await db.query('SELECT * FROM usuarios WHERE id = ?', [userId]);
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+
+    const user = rows[0];
+
+    // Verificar contraseña actual
+    const coincide = await bcrypt.compare(actual, user.password);
+    if (!coincide) {
+      return res.status(400).json({ error: 'Contraseña actual incorrecta' });
+    }
+
+    // Nueva contraseña hasheada
+    const nuevaHash = await bcrypt.hash(nueva, 10);
+
+    // Guardar nueva contraseña
+    await db.query('UPDATE usuarios SET password = ? WHERE id = ?', [
+      nuevaHash,
+      userId
+    ]);
+
+    res.json({ mensaje: 'Contraseña actualizada correctamente' });
+
+  } catch (err) {
+    console.error('Error en cambiarPassword:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
