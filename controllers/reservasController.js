@@ -1,6 +1,5 @@
 // reservasController.js - VERSIÓN CORREGIDA
 const db = require('../db');
-const enviarMailReserva = require('../utils/mailer');
 
 /* ==========================================================
    RESERVA SIN USUARIO LOGEADO (INVITADO)
@@ -49,13 +48,6 @@ exports.crearReservaInvitado = async (req, res) => {
     ]);
 
     const reservaId = result.insertId;
-
-    // Intentar enviar email (no rompe si falla)
-    try {
-      await enviarMailReserva({ nombre, telefono, email, fecha, hora });
-    } catch (mailErr) {
-      console.error("⚠️ Error enviando email:", mailErr);
-    }
 
     return res.json({
       ok: true,
@@ -121,18 +113,6 @@ exports.crearReservaConUsuario = async (req, res) => {
     ]);
 
     const reservaId = result.insertId;
-
-    try {
-      await enviarMailReserva({
-        nombre: user.nombre,
-        email: user.email,
-        telefono: user.telefono || "",
-        fecha,
-        hora
-      });
-    } catch (mailErr) {
-      console.error("⚠️ Error enviando email:", mailErr);
-    }
 
     return res.json({
       ok: true,

@@ -16,16 +16,20 @@ const eventosRouter = require('./routes/eventos');
 const app = express();
 
 /* ============================================================
-   CORS — CONFIG RENDER + ANGULAR
+   CORS — CONFIG DON FRANCISCO FRONTEND
    ============================================================ */
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_2,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:4173',
+  'http://127.0.0.1:4173'
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      'http://localhost:4200',
-      'https://bentasca.com',
-      'https://www.bentasca.com',
-      'https://bentasca-backend2.onrender.com'
-    ],
+    origin: allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -56,7 +60,7 @@ app.use('/eventos', eventosRouter);
    ROOT
    ============================================================ */
 app.get('/', (req, res) => {
-  res.send('Bentasca backend funcionando correctamente');
+  res.send('Don Francisco backend funcionando correctamente');
 });
 
 /* ============================================================
