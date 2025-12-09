@@ -3,25 +3,17 @@ const router = express.Router();
 const auth = require('../middlewares/auth');
 const ctrl = require('../controllers/usuariosController');
 
-// -------------------------
-// AUTH PÚBLICO
-// -------------------------
+// AUTH
 router.post('/register', ctrl.register);
 router.post('/login', ctrl.login);
 
-// -------------------------
-// PERFIL LOGUEADO
-// -------------------------
+// PERFIL
 router.get('/me', auth, ctrl.getMe);
 
-// -------------------------
-// CAMBIAR PASSWORD
-// -------------------------
+// PASSWORD
 router.put('/cambiar-password', auth, ctrl.cambiarPassword);
 
-// -------------------------
-// ACTUALIZAR AVATAR
-// -------------------------
+// AVATAR
 router.put('/actualizar-foto', auth, ctrl.actualizarFoto);
 
 module.exports = router;
