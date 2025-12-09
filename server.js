@@ -13,6 +13,9 @@ const tablasRouter = require('./routes/tablas');
 const goleadoresRouter = require('./routes/goleadores');
 const eventosRouter = require('./routes/eventos');
 
+const BASE_URL =
+  process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'https://donfrancisco-backend.onrender.com';
+
 const app = express();
 
 /* ============================================================
@@ -60,7 +63,7 @@ app.use('/eventos', eventosRouter);
    ROOT
    ============================================================ */
 app.get('/', (req, res) => {
-  res.send('Don Francisco backend funcionando correctamente');
+  res.send(`Don Francisco backend funcionando correctamente. Base URL: ${BASE_URL}`);
 });
 
 /* ============================================================
@@ -68,7 +71,7 @@ app.get('/', (req, res) => {
    ============================================================ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
+  console.log(`🚀 Servidor escuchando en puerto ${PORT} (BASE_URL: ${BASE_URL})`);
 });
 
 /* ============================================================
