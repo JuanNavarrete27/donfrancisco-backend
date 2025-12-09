@@ -1,5 +1,5 @@
 ENDPOINTS - Bentasca Fixed
-Base URL: http://localhost:3000 or your render URL
+Base URL: https://donfrancisco-backend.onrender.com/
 Auth: Authorization: Bearer <token>
 
 POST /usuarios/register
