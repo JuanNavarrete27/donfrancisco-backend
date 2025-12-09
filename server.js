@@ -1,5 +1,5 @@
 /*
-  server.js — versión mínima y estable Don Francisco (solo usuarios)
+  server.js — versión mínima, estable y funcional Don Francisco (solo usuarios)
 */
 
 const express = require("express");
@@ -57,9 +57,18 @@ app.get("/", (req, res) => {
    SERVER
 ============================================================ */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () =>
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`)
-);
+
+app.listen(PORT, async () => {
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+
+  // ----- TEST DE CONEXIÓN A LA DB -----
+  try {
+    await db.query("SELECT 1");
+    console.log("MySQL conectado correctamente ✔️");
+  } catch (err) {
+    console.error("❌ Error conectando a MySQL:", err.message);
+  }
+});
 
 /* ============================================================
    KEEP ALIVE PARA RENDER
