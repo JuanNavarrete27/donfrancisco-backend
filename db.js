@@ -1,32 +1,35 @@
 /*
-  db.js - mysql2/promise pool connection (CORREGIDO)
+  db.js — conexión MySQL optimizada para Render + Clever Cloud + local
 */
-require('dotenv').config();
-const mysql = require('mysql2/promise'); // 👈 ESTA ES LA CORRECCIÓN CLAVE
 
-const {
-  MYSQL_ADDON_HOST,
-  MYSQL_ADDON_USER,
-  MYSQL_ADDON_PASSWORD,
-  MYSQL_ADDON_DB,
-  MYSQL_ADDON_PORT,
-  DB_HOST,
-  DB_USER,
-  DB_PASSWORD,
-  DB_NAME,
-  DB_PORT
-} = process.env;
+require('dotenv').config();
+const mysql = require('mysql2/promise');
+
+// VARIABLES NECESARIAS
+const REQUIRED = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"];
+for (const v of REQUIRED) {
+  if (!process.env[v]) console.warn(`⚠️ Falta variable: ${v}`);
+}
 
 const pool = mysql.createPool({
-  host: MYSQL_ADDON_HOST || DB_HOST || 'b99rg5klb9i5qhzdwcy4-mysql.services.clever-cloud.com',
-  user: MYSQL_ADDON_USER || DB_USER || 'uanhygqsgszwryv8',
-  password: MYSQL_ADDON_PASSWORD || DB_PASSWORD || 'vpP9Puizq27MwNCL7PrZ',
-  database: MYSQL_ADDON_DB || DB_NAME || 'b99rg5klb9i5qhzdwcy4',
-  port: Number(MYSQL_ADDON_PORT || DB_PORT || 3306),
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: Number(process.env.DB_PORT || 3306),
   waitForConnections: true,
-  connectionLimit: 4,
+  connectionLimit: 8,
   queueLimit: 0
 });
 
-// Exportar pool directamente (ya es basado en promesas)
+// TEST DE CONEXIÓN
+(async () => {
+  try {
+    const [r] = await pool.query("SELECT 1 AS ok");
+    console.log("✅ DB conectada correctamente:", r[0].ok);
+  } catch (err) {
+    console.error("❌ Error conectando a la DB:", err.message);
+  }
+})();
+
 module.exports = pool;
