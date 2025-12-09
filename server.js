@@ -1,5 +1,5 @@
 /*
-  server.js — versión optimizada Don Francisco (usuarios + reservas)
+  server.js — versión mínima y estable Don Francisco (solo usuarios)
 */
 
 const express = require("express");
@@ -8,7 +8,6 @@ const path = require("path");
 require("dotenv").config();
 
 const db = require("./db");
-const reservasRouter = require("./routes/reservas");
 const usuariosRouter = require("./routes/usuarios");
 
 const app = express();
@@ -43,16 +42,15 @@ app.use(express.json({ limit: "10mb" }));
 app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 
 /* ============================================================
-   RUTAS ACTIVAS (solo usuarios + reservas)
+   RUTAS ACTIVAS (solo usuarios)
 ============================================================ */
-app.use("/reservas", reservasRouter);
 app.use("/usuarios", usuariosRouter);
 
 /* ============================================================
    ROOT
 ============================================================ */
 app.get("/", (req, res) => {
-  res.send("Backend Don Francisco funcionando correctamente.");
+  res.send("Backend Don Francisco funcionando correctamente (solo usuarios).");
 });
 
 /* ============================================================
