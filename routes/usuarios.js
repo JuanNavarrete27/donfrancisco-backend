@@ -7,15 +7,15 @@ const ctrl = require('../controllers/usuariosController');
 const db = require('../db');
 const bcrypt = require('bcryptjs');
 
-// -------------------------
-// AUTH PÚBLICO
-// -------------------------
+// --------------------------------------
+// AUTH (PÚBLICO)
+// --------------------------------------
 router.post('/register', ctrl.register);
 router.post('/login', ctrl.login);
 
-// -------------------------
+// --------------------------------------
 // PERFIL DEL USUARIO LOGUEADO
-// -------------------------
+// --------------------------------------
 router.get('/me', auth, async (req, res) => {
   try {
     const [rows] = await db.query(
@@ -44,9 +44,9 @@ router.get('/me', auth, async (req, res) => {
   }
 });
 
-// -------------------------
+// --------------------------------------
 // CAMBIAR CONTRASEÑA
-// -------------------------
+// --------------------------------------
 router.put('/cambiar-password', auth, async (req, res) => {
   const { actual, nueva } = req.body;
 
@@ -55,14 +55,23 @@ router.put('/cambiar-password', auth, async (req, res) => {
   }
 
   try {
-    const [rows] = await db.query('SELECT password FROM usuarios WHERE id = ?', [req.user.id]);
-    if (rows.length === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const [rows] = await db.query(
+      'SELECT password FROM usuarios WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (rows.length === 0)
+      return res.status(404).json({ error: 'Usuario no encontrado' });
 
     const passwordValido = bcrypt.compareSync(actual, rows[0].password);
-    if (!passwordValido) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+    if (!passwordValido)
+      return res.status(401).json({ error: 'Contraseña actual incorrecta' });
 
     const hash = bcrypt.hashSync(nueva, 10);
-    await db.query('UPDATE usuarios SET password = ? WHERE id = ?', [hash, req.user.id]);
+    await db.query('UPDATE usuarios SET password = ? WHERE id = ?', [
+      hash,
+      req.user.id
+    ]);
 
     res.json({ mensaje: 'Contraseña actualizada' });
   } catch (err) {
@@ -71,28 +80,38 @@ router.put('/cambiar-password', auth, async (req, res) => {
   }
 });
 
-// -------------------------
-// ACTUALIZAR FOTO
-// -------------------------
+// --------------------------------------
+// ACTUALIZAR FOTO DE PERFIL
+// --------------------------------------
 router.put('/actualizar-foto', auth, async (req, res) => {
   let { foto } = req.body;
 
   if (!foto) {
-    return res.status(400).json({ error: 'Debe enviar el nombre del avatar' });
+    return res
+      .status(400)
+      .json({ error: 'Debe enviar el nombre del avatar' });
   }
 
   if (!foto.endsWith('.jpg')) {
     foto = foto + '.jpg';
   }
 
-  const AVATARS_VALIDOS = ['avatar1.jpg', 'avatar2.jpg', 'avatar3.jpg', 'avatar4.jpg'];
+  const AVATARS_VALIDOS = [
+    'avatar1.jpg',
+    'avatar2.jpg',
+    'avatar3.jpg',
+    'avatar4.jpg'
+  ];
 
   if (!AVATARS_VALIDOS.includes(foto)) {
     return res.status(400).json({ error: 'Avatar inválido' });
   }
 
   try {
-    await db.query('UPDATE usuarios SET foto = ? WHERE id = ?', [foto, req.user.id]);
+    await db.query('UPDATE usuarios SET foto = ? WHERE id = ?', [
+      foto,
+      req.user.id
+    ]);
 
     return res.json({
       mensaje: 'Avatar actualizado correctamente',
@@ -104,9 +123,9 @@ router.put('/actualizar-foto', auth, async (req, res) => {
   }
 });
 
-// -------------------------
-// ADMIN
-// -------------------------
+// --------------------------------------
+// ADMIN (opcional)
+// --------------------------------------
 router.get('/', auth, soloAdmin, ctrl.listUsers);
 router.get('/:id', auth, soloAdmin, ctrl.getUser);
 router.put('/:id', auth, soloAdmin, ctrl.updateUser);
