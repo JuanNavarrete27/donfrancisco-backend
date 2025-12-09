@@ -1,66 +1,63 @@
-// controllers/usuariosController.js
-const db = require('../db');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const db = require("../db");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-function normalizarFoto(foto) {
-  if (!foto) return null;
-  const invalido = ['0', 'default', 'undefined', 'null', ''];
-  if (invalido.includes(String(foto).trim())) return null;
-  return foto;
+function normalizarFoto(f) {
+  if (!f) return null;
+  const invalid = ["0", "default", "undefined", "null", ""];
+  return invalid.includes(String(f).trim()) ? null : f;
 }
 
-// ====================== REGISTER ======================
+// REGISTER
 exports.register = async (req, res) => {
   const { nombre, apellido, email, password, rol, telefono } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Faltan datos obligatorios' });
-  }
+  if (!email || !password)
+    return res.status(400).json({ error: "Faltan datos obligatorios" });
 
   try {
-    const [exists] = await db.query('SELECT id FROM usuarios WHERE email = ?', [email]);
-    if (exists.length > 0) {
-      return res.status(409).json({ error: 'Email ya registrado' });
-    }
+    const [exists] = await db.query(
+      "SELECT id FROM usuarios WHERE email = ?",
+      [email]
+    );
+    if (exists.length > 0)
+      return res.status(409).json({ error: "Email ya registrado" });
 
     const hash = bcrypt.hashSync(password, 10);
 
     const [result] = await db.query(
       `INSERT INTO usuarios (nombre, apellido, email, password, rol, telefono)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [nombre || '', apellido || '', email, hash, rol || 'user', telefono || '']
+      [nombre || "", apellido || "", email, hash, rol || "user", telefono || ""]
     );
 
-    res.status(201).json({ mensaje: 'Usuario creado', id: result.insertId });
+    res.status(201).json({ mensaje: "Usuario creado", id: result.insertId });
   } catch (err) {
-    console.error('Error en register:', err);
-    res.status(500).json({ error: 'Error en registro' });
+    res.status(500).json({ error: "Error en registro" });
   }
 };
 
-// ====================== LOGIN ======================
+// LOGIN
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: 'Faltan datos' });
-  }
+  if (!email || !password)
+    return res.status(400).json({ error: "Faltan datos" });
 
   try {
-    const [rows] = await db.query('SELECT * FROM usuarios WHERE email = ?', [email]);
+    const [rows] = await db.query(
+      "SELECT * FROM usuarios WHERE email = ?",
+      [email]
+    );
 
-    if (rows.length === 0) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
-    }
+    if (rows.length === 0)
+      return res.status(401).json({ error: "Credenciales inválidas" });
 
     const user = rows[0];
 
-    if (!bcrypt.compareSync(password, user.password)) {
-      return res.status(401).json({ error: 'Credenciales inválidas' });
-    }
+    if (!bcrypt.compareSync(password, user.password))
+      return res.status(401).json({ error: "Credenciales inválidas" });
 
-    // ==== TOKEN COMPLETO (ahora sí funciona para reservas automáticas) ====
     const token = jwt.sign(
       {
         id: user.id,
@@ -71,135 +68,23 @@ exports.login = async (req, res) => {
         rol: user.rol,
         foto: normalizarFoto(user.foto)
       },
-      process.env.JWT_SECRET || 'changeme',
-      { expiresIn: '8h' }
+      process.env.JWT_SECRET || "changeme",
+      { expiresIn: "8h" }
     );
 
     res.json({
       token,
       user: {
         id: user.id,
-        nombre: user.nombre || '',
-        apellido: user.apellido || '',
+        nombre: user.nombre || "",
+        apellido: user.apellido || "",
         email: user.email,
-        telefono: user.telefono || '',
+        telefono: user.telefono || "",
         rol: user.rol,
         foto: normalizarFoto(user.foto)
       }
     });
   } catch (err) {
-    console.error('Error en login:', err);
-    res.status(500).json({ error: 'Error en login' });
+    res.status(500).json({ error: "Error en login" });
   }
 };
-
-// ====================== ADMIN HELPERS ======================
-exports.listUsers = async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      'SELECT id, nombre, apellido, email, rol, telefono, foto FROM usuarios'
-    );
-
-    res.json(
-      rows.map(u => ({
-        ...u,
-        foto: normalizarFoto(u.foto)
-      }))
-    );
-  } catch (err) {
-    console.error('Error listUsers:', err);
-    res.status(500).json({ error: 'Error listando usuarios' });
-  }
-};
-
-exports.getUser = async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      'SELECT id, nombre, apellido, email, rol, telefono, foto FROM usuarios WHERE id = ?',
-      [req.params.id]
-    );
-
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    const u = rows[0];
-    res.json({
-      ...u,
-      foto: normalizarFoto(u.foto)
-    });
-  } catch (err) {
-    console.error('Error getUser:', err);
-    res.status(500).json({ error: 'Error obteniendo usuario' });
-  }
-};
-
-exports.updateUser = async (req, res) => {
-  const { nombre, apellido, rol, foto, telefono } = req.body;
-
-  try {
-    await db.query(
-      `UPDATE usuarios 
-       SET nombre = ?, apellido = ?, rol = ?, foto = ?, telefono = ?
-       WHERE id = ?`,
-      [nombre, apellido, rol, foto, telefono || '', req.params.id]
-    );
-
-    res.json({ mensaje: 'Usuario actualizado' });
-  } catch (err) {
-    console.error('Error updateUser:', err);
-    res.status(500).json({ error: 'Error actualizando usuario' });
-  }
-};
-
-exports.deleteUser = async (req, res) => {
-  try {
-    await db.query('DELETE FROM usuarios WHERE id = ?', [req.params.id]);
-    res.json({ mensaje: 'Usuario eliminado' });
-  } catch (err) {
-    console.error('Error deleteUser:', err);
-    res.status(500).json({ error: 'Error eliminando usuario' });
-  }
-};
-
-// ====================== CAMBIAR PASSWORD ======================
-exports.cambiarPassword = async (req, res) => {
-  try {
-    const userId = req.user.id; // viene del middleware auth
-    const { actual, nueva } = req.body;
-
-    if (!actual || !nueva) {
-      return res.status(400).json({ error: 'Faltan datos' });
-    }
-
-    // Buscar usuario
-    const [rows] = await db.query('SELECT * FROM usuarios WHERE id = ?', [userId]);
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    const user = rows[0];
-
-    // Verificar contraseña actual
-    const coincide = await bcrypt.compare(actual, user.password);
-    if (!coincide) {
-      return res.status(400).json({ error: 'Contraseña actual incorrecta' });
-    }
-
-    // Nueva contraseña hasheada
-    const nuevaHash = await bcrypt.hash(nueva, 10);
-
-    // Guardar nueva contraseña
-    await db.query('UPDATE usuarios SET password = ? WHERE id = ?', [
-      nuevaHash,
-      userId
-    ]);
-
-    res.json({ mensaje: 'Contraseña actualizada correctamente' });
-
-  } catch (err) {
-    console.error('Error en cambiarPassword:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
