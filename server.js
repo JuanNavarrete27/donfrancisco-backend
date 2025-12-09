@@ -1,84 +1,71 @@
 /*
-  server.js — versión optimizada para Render + Angular + rutas de reservas
+  server.js — versión optimizada Don Francisco (usuarios + reservas)
 */
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-require('dotenv').config();
-const db = require('./db');
 
-const reservasRouter = require('./routes/reservas');
-const usuariosRouter = require('./routes/usuarios');
-const tablasRouter = require('./routes/tablas');
-const goleadoresRouter = require('./routes/goleadores');
-const eventosRouter = require('./routes/eventos');
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+require("dotenv").config();
 
-const BASE_URL =
-  process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL || 'https://donfrancisco-backend.onrender.com';
+const db = require("./db");
+const reservasRouter = require("./routes/reservas");
+const usuariosRouter = require("./routes/usuarios");
 
 const app = express();
 
 /* ============================================================
-   CORS — CONFIG DON FRANCISCO FRONTEND
-   ============================================================ */
+   CORS CONFIG
+============================================================ */
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL_2,
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:4173',
-  'http://127.0.0.1:4173'
+  "http://localhost:5173",
+  "http://127.0.0.1:5173"
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
-app.options('*', cors());
 
 /* ============================================================
    BODY PARSER
-   ============================================================ */
-app.use(express.json({ limit: '10mb' }));
+============================================================ */
+app.use(express.json({ limit: "10mb" }));
 
 /* ============================================================
-   ARCHIVOS ESTÁTICOS — AVATARS
-   ============================================================ */
-app.use('/avatars', express.static(path.join(__dirname, 'avatars')));
+   STATIC FILES (AVATARS)
+============================================================ */
+app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 
 /* ============================================================
-   RUTAS API
-   ============================================================ */
-app.use('/reservas', reservasRouter);
-app.use('/usuarios', usuariosRouter);
-app.use('/tablas', tablasRouter);
-app.use('/goleadores', goleadoresRouter);
-app.use('/eventos', eventosRouter);
+   RUTAS ACTIVAS (solo usuarios + reservas)
+============================================================ */
+app.use("/reservas", reservasRouter);
+app.use("/usuarios", usuariosRouter);
 
 /* ============================================================
    ROOT
-   ============================================================ */
-app.get('/', (req, res) => {
-  res.send(`Don Francisco backend funcionando correctamente. Base URL: ${BASE_URL}`);
+============================================================ */
+app.get("/", (req, res) => {
+  res.send("Backend Don Francisco funcionando correctamente.");
 });
 
 /* ============================================================
-   SERVER RUN
-   ============================================================ */
+   SERVER
+============================================================ */
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en puerto ${PORT} (BASE_URL: ${BASE_URL})`);
-});
+app.listen(PORT, () =>
+  console.log(`🚀 Servidor corriendo en puerto ${PORT}`)
+);
 
 /* ============================================================
-   KEEP ALIVE DB — NECESARIO EN RENDER
-   ============================================================ */
+   KEEP ALIVE PARA RENDER
+============================================================ */
 setInterval(() => {
-  db.query('SELECT 1')
-    .then(() => console.log('Ping DB ✓'))
-    .catch(err => console.error('Ping DB fallido:', err));
+  db.query("SELECT 1").catch(() => {});
 }, 5 * 60 * 1000);
