@@ -13,9 +13,10 @@ const usuariosRouter = require("./routes/usuarios");
 const app = express();
 
 /* ============================================================
-   CORS CONFIG
+   CORS CONFIG ✅ FIX NETLIFY
 ============================================================ */
 const allowedOrigins = [
+  "https://donfrancisco.netlify.app", // ✅ NETLIFY PROD
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL_2,
   "http://localhost:5173",
@@ -24,12 +25,24 @@ const allowedOrigins = [
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      // Permitir requests sin origin (Postman, Render healthchecks, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
   })
 );
+
+// ✅ RESPONDER PREFLIGHT
+app.options("*", cors());
 
 /* ============================================================
    BODY PARSER
