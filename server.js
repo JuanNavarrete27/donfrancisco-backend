@@ -1,5 +1,6 @@
 /*
-  server.js — versión mínima, estable y funcional Don Francisco (solo usuarios)
+  server.js — versión mínima, estable y funcional Don Francisco
+  Usuarios + Noticias
 */
 
 const express = require("express");
@@ -8,7 +9,10 @@ const path = require("path");
 require("dotenv").config();
 
 const db = require("./db");
+
+// ROUTES
 const usuariosRouter = require("./routes/usuarios");
+const noticiasRouter = require("./routes/noticias");
 
 const app = express();
 
@@ -27,7 +31,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Permitir requests sin origin (Postman, Render healthchecks, etc.)
+      // Permitir requests sin origin (Postman, Render, healthchecks)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -51,20 +55,21 @@ app.options("*", cors());
 app.use(express.json({ limit: "10mb" }));
 
 /* ============================================================
-   STATIC FILES (AVATARS)
+   STATIC FILES
 ============================================================ */
 app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 
 /* ============================================================
-   RUTAS ACTIVAS (solo usuarios)
+   RUTAS ACTIVAS
 ============================================================ */
 app.use("/usuarios", usuariosRouter);
+app.use("/noticias", noticiasRouter);
 
 /* ============================================================
    ROOT
 ============================================================ */
 app.get("/", (req, res) => {
-  res.send("Backend Don Francisco funcionando correctamente (solo usuarios).");
+  res.send("Backend Don Francisco funcionando correctamente ✔️");
 });
 
 /* ============================================================
