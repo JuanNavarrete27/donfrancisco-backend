@@ -1,22 +1,17 @@
 /*
-  db.js — conexión MySQL optimizada para Render + Clever Cloud + local
+  db.js — conexión MySQL optimizada
+  Render + Clever Cloud + local
 */
 
-require('dotenv').config();
-const mysql = require('mysql2/promise');
-
-// VARIABLES NECESARIAS
-const REQUIRED = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"];
-for (const v of REQUIRED) {
-  if (!process.env[v]) console.warn(`⚠️ Falta variable: ${v}`);
-}
+const mysql = require("mysql2/promise");
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: Number(process.env.DB_PORT || 3306),
+  host: "brhodt102rnderfadyew-mysql.services.clever-cloud.com",
+  user: "uck60lcvdg2oj7xl",
+  password: "ZLkXlB4PWtFAMwNdw25q",
+  database: "brhodt102rnderfadyew",
+  port: 3306,
+
   waitForConnections: true,
   connectionLimit: 8,
   queueLimit: 0
