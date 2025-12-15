@@ -1,6 +1,6 @@
 /*
-  db.js — conexión MySQL optimizada
-  Render + Clever Cloud + local
+  db.js — conexión MySQL optimizada y estable
+  Render + Clever Cloud + producción segura
 */
 
 const mysql = require("mysql2/promise");
@@ -12,16 +12,23 @@ const pool = mysql.createPool({
   database: "brhodt102rnderfadyew",
   port: 3306,
 
+  // 🔒 CLAVE PARA EVITAR EL ERROR DE CONEXIONES
   waitForConnections: true,
-  connectionLimit: 8,
-  queueLimit: 0
+  connectionLimit: 4,   // ⬅️ MENOR que el máximo real (5)
+  queueLimit: 10,       // cola pequeña, evita explosiones
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000
 });
 
-// TEST DE CONEXIÓN
+/* ============================================================
+   TEST DE CONEXIÓN (una sola vez)
+============================================================ */
 (async () => {
   try {
-    const [r] = await pool.query("SELECT 1 AS ok");
-    console.log("✅ DB conectada correctamente:", r[0].ok);
+    const conn = await pool.getConnection();
+    await conn.query("SELECT 1");
+    conn.release();
+    console.log("✅ DB conectada correctamente (pool activo)");
   } catch (err) {
     console.error("❌ Error conectando a la DB:", err.message);
   }
