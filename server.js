@@ -1,6 +1,6 @@
 /*
   server.js — versión mínima, estable y funcional Don Francisco
-  Usuarios + Noticias
+  Usuarios + Noticias + Contacto
 */
 
 const express = require("express");
@@ -13,6 +13,7 @@ const db = require("./db");
 // ROUTES
 const usuariosRouter = require("./routes/usuarios");
 const noticiasRouter = require("./routes/noticias");
+const contactoRouter = require("./routes/contacto"); // ✅ NUEVO
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 ============================================================ */
 app.use("/usuarios", usuariosRouter);
 app.use("/noticias", noticiasRouter);
+app.use("/contacto", contactoRouter); // ✅ ESTA ERA LA QUE FALTABA
 
 /* ============================================================
    ROOT
