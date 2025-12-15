@@ -3,10 +3,10 @@ const router = express.Router();
 const contactoController = require('../controllers/contactoController');
 
 // 📩 CREAR MENSAJE (PÚBLICO)
-router.post('/', contactoController.crearMensaje);
+router.post('/', contactoController.enviarMensaje);
 
 // 📬 LISTAR MENSAJES (ADMIN)
-router.get('/', contactoController.listarMensajes);
+router.get('/', contactoController.obtenerMensajes);
 
 // 🔢 COUNTS (ADMIN)
 router.get('/counts', contactoController.obtenerCounts);
