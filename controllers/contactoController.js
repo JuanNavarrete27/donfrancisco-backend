@@ -29,12 +29,14 @@ exports.crearMensaje = async (req, res) => {
     }
 
     await db.query(
-      `INSERT INTO contact_messages (nombre, email, mensaje)
-       VALUES (?, ?, ?)`,
+      `
+      INSERT INTO contact_messages (nombre, email, mensaje)
+      VALUES (?, ?, ?)
+      `,
       [nombre, email, mensaje]
     );
 
-    return res.status(201).json({ message: "Mensaje enviado correctamente" });
+    return res.json({ message: "Mensaje enviado correctamente" });
 
   } catch (err) {
     console.error("crearMensaje:", err);
@@ -44,7 +46,7 @@ exports.crearMensaje = async (req, res) => {
 
 /* ============================================================
    GET /contacto
-   Admin — listado para panel
+   Admin — listado
 ============================================================ */
 
 exports.listarMensajes = async (req, res) => {
@@ -64,7 +66,7 @@ exports.listarMensajes = async (req, res) => {
       sql += ` WHERE leido = 0`;
     }
 
-    sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    sql += ` LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     const [rows] = await db.query(sql, params);
@@ -79,7 +81,6 @@ exports.listarMensajes = async (req, res) => {
 
 /* ============================================================
    GET /contacto/counts
-   Admin — badge + métricas
 ============================================================ */
 
 exports.obtenerCounts = async (req, res) => {
@@ -103,7 +104,6 @@ exports.obtenerCounts = async (req, res) => {
 
 /* ============================================================
    PUT /contacto/:id/leido
-   Admin — marcar como leído
 ============================================================ */
 
 exports.marcarLeido = async (req, res) => {
@@ -136,7 +136,6 @@ exports.marcarLeido = async (req, res) => {
 
 /* ============================================================
    DELETE /contacto/:id
-   Admin — soft delete
 ============================================================ */
 
 exports.eliminarMensaje = async (req, res) => {
@@ -163,58 +162,6 @@ exports.eliminarMensaje = async (req, res) => {
 
   } catch (err) {
     console.error("eliminarMensaje:", err);
-    return res.status(500).json({ message: "Error del servidor" });
-  }
-};
-
-/* ============================================================
-   POST /contacto/:id/reply
-   Admin — base para responder por mail
-============================================================ */
-
-exports.responderPorMail = async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    const subject = clean(req.body.subject);
-    const body = clean(req.body.body);
-
-    if (!id || !subject || !body) {
-      return res.status(400).json({ message: "Datos incompletos" });
-    }
-
-    const [[msg]] = await db.query(
-      `
-      SELECT email, nombre
-      FROM contact_messages
-      WHERE id = ? AND eliminado = 0
-      `,
-      [id]
-    );
-
-    if (!msg) {
-      return res.status(404).json({ message: "Mensaje no encontrado" });
-    }
-
-    // 🚧 Envío de mail pendiente (MailerSend / SendGrid)
-    // await mailer.send({ to: msg.email, subject, html: body });
-
-    await db.query(
-      `
-      UPDATE contact_messages
-      SET respondido = 1, responded_at = NOW()
-      WHERE id = ?
-      `,
-      [id]
-    );
-
-    return res.json({
-      message: "Respuesta registrada (envío de mail pendiente)",
-      to: msg.email,
-      nombre: msg.nombre,
-    });
-
-  } catch (err) {
-    console.error("responderPorMail:", err);
     return res.status(500).json({ message: "Error del servidor" });
   }
 };
