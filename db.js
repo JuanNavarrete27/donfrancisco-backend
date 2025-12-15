@@ -1,10 +1,9 @@
 /*
-  db.js — MySQL pool ESTABLE (Clever Cloud friendly)
+  db.js — MySQL pool ULTRA ESTABLE (Clever Cloud FREE)
 */
 
 const mysql = require("mysql2/promise");
 
-// ⚠️ IMPORTANTE: usar SIEMPRE variables de entorno en producción
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "brhodt102rnderfadyew-mysql.services.clever-cloud.com",
   user: process.env.DB_USER || "uck60lcvdg2oj7xl",
@@ -12,18 +11,19 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || "brhodt102rnderfadyew",
   port: 3306,
 
-  // 🔒 CLAVES PARA CLEVER CLOUD (plan free)
+  // 🔒 CRÍTICO para Clever Cloud free
   waitForConnections: true,
-  connectionLimit: 3, // ⬅️ NO subir esto
+  connectionLimit: 2,      // ⬅️ BAJAR SÍ O SÍ
   queueLimit: 0,
 
-  // 🔒 evita reconexiones fantasmas
-  enableKeepAlive: false
+  // 🔒 evita reconexiones fantasma
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
-// ⚠️ NO TEST ACTIVO
-// ⚠️ NO pool.getConnection() manual
-// ⚠️ NO SELECT 1
-// Clever Cloud maneja el lifecycle solo
+// ❌ NO hacer pool.getConnection()
+// ❌ NO hacer SELECT 1
+// ❌ NO crear más de un pool
+// ✔ usar SIEMPRE pool.query()
 
 module.exports = pool;
