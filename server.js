@@ -8,12 +8,14 @@ const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
 
-const db = require("./db");
+// ⚠️ seguimos importando db para que el pool exista,
+// pero NO hacemos queries acá
+require("./db");
 
 // ROUTES
 const usuariosRouter = require("./routes/usuarios");
 const noticiasRouter = require("./routes/noticias");
-const contactoRouter = require("./routes/contacto"); // ✅ NUEVO
+const contactoRouter = require("./routes/contacto");
 
 const app = express();
 
@@ -21,7 +23,7 @@ const app = express();
    CORS CONFIG ✅ FIX NETLIFY
 ============================================================ */
 const allowedOrigins = [
-  "https://donfrancisco.netlify.app", // ✅ NETLIFY PROD
+  "https://donfrancisco.netlify.app",
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL_2,
   "http://localhost:5173",
@@ -32,7 +34,6 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Permitir requests sin origin (Postman, Render, healthchecks)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -65,7 +66,7 @@ app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 ============================================================ */
 app.use("/usuarios", usuariosRouter);
 app.use("/noticias", noticiasRouter);
-app.use("/contacto", contactoRouter); // ✅ ESTA ERA LA QUE FALTABA
+app.use("/contacto", contactoRouter);
 
 /* ============================================================
    ROOT
@@ -79,21 +80,6 @@ app.get("/", (req, res) => {
 ============================================================ */
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-
-  // ----- TEST DE CONEXIÓN A LA DB -----
-  try {
-    await db.query("SELECT 1");
-    console.log("MySQL conectado correctamente ✔️");
-  } catch (err) {
-    console.error("❌ Error conectando a MySQL:", err.message);
-  }
 });
-
-/* ============================================================
-   KEEP ALIVE PARA RENDER
-============================================================ */
-setInterval(() => {
-  db.query("SELECT 1").catch(() => {});
-}, 5 * 60 * 1000);
