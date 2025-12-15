@@ -14,7 +14,7 @@ const isValidEmail = (email) =>
    Público — enviar mensaje
 ============================================================ */
 
-exports.enviarMensaje = async (req, res) => {
+exports.crearMensaje = async (req, res) => {
   try {
     const nombre = clean(req.body.nombre);
     const email = clean(req.body.email).toLowerCase();
@@ -34,10 +34,10 @@ exports.enviarMensaje = async (req, res) => {
       [nombre, email, mensaje]
     );
 
-    return res.json({ message: "Mensaje enviado correctamente" });
+    return res.status(201).json({ message: "Mensaje enviado correctamente" });
 
   } catch (err) {
-    console.error("enviarMensaje:", err);
+    console.error("crearMensaje:", err);
     return res.status(500).json({ message: "Error del servidor" });
   }
 };
@@ -45,13 +45,9 @@ exports.enviarMensaje = async (req, res) => {
 /* ============================================================
    GET /contacto
    Admin — listado para panel
-   Query params:
-   - unread=1
-   - limit
-   - offset
 ============================================================ */
 
-exports.obtenerMensajes = async (req, res) => {
+exports.listarMensajes = async (req, res) => {
   try {
     const unread = String(req.query.unread) === "1";
     const limit = Math.min(Number(req.query.limit) || 50, 200);
@@ -68,7 +64,7 @@ exports.obtenerMensajes = async (req, res) => {
       sql += ` WHERE leido = 0`;
     }
 
-    sql += ` LIMIT ? OFFSET ?`;
+    sql += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     const [rows] = await db.query(sql, params);
@@ -76,7 +72,7 @@ exports.obtenerMensajes = async (req, res) => {
     return res.json(rows);
 
   } catch (err) {
-    console.error("obtenerMensajes:", err);
+    console.error("listarMensajes:", err);
     return res.status(500).json({ message: "Error del servidor" });
   }
 };
@@ -199,7 +195,7 @@ exports.responderPorMail = async (req, res) => {
       return res.status(404).json({ message: "Mensaje no encontrado" });
     }
 
-    // 🚧 Acá va MailerSend / SendGrid / Nodemailer
+    // 🚧 Envío de mail pendiente (MailerSend / SendGrid)
     // await mailer.send({ to: msg.email, subject, html: body });
 
     await db.query(
@@ -212,7 +208,7 @@ exports.responderPorMail = async (req, res) => {
     );
 
     return res.json({
-      message: "Respuesta registrada (envío de mail pendiente de integrar)",
+      message: "Respuesta registrada (envío de mail pendiente)",
       to: msg.email,
       nombre: msg.nombre,
     });
