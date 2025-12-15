@@ -4,22 +4,26 @@
 
 const mysql = require("mysql2/promise");
 
+// ⚠️ IMPORTANTE: usar SIEMPRE variables de entorno en producción
 const pool = mysql.createPool({
-  host: "brhodt102rnderfadyew-mysql.services.clever-cloud.com",
-  user: "uck60lcvdg2oj7xl",
-  password: "ZLkXlB4PWtFAMwNdw25q",
-  database: "brhodt102rnderfadyew",
+  host: process.env.DB_HOST || "brhodt102rnderfadyew-mysql.services.clever-cloud.com",
+  user: process.env.DB_USER || "uck60lcvdg2oj7xl",
+  password: process.env.DB_PASSWORD || "ZLkXlB4PWtFAMwNdw25q",
+  database: process.env.DB_NAME || "brhodt102rnderfadyew",
   port: 3306,
 
-  // 🔒 CLAVE PARA NO PASARSE DE CONEXIONES
+  // 🔒 CLAVES PARA CLEVER CLOUD (plan free)
   waitForConnections: true,
-  connectionLimit: 3,     // ⬅️ BAJAMOS A 3 (CLAVE)
-  queueLimit: 0
+  connectionLimit: 3, // ⬅️ NO subir esto
+  queueLimit: 0,
+
+  // 🔒 evita reconexiones fantasmas
+  enableKeepAlive: false
 });
 
-// ❌ NO TEST ACTIVO
-// ❌ NO SELECT 1
-// ❌ NO keep alive SQL
-// Clever Cloud cierra conexiones inactivas solo
+// ⚠️ NO TEST ACTIVO
+// ⚠️ NO pool.getConnection() manual
+// ⚠️ NO SELECT 1
+// Clever Cloud maneja el lifecycle solo
 
 module.exports = pool;
