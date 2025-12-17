@@ -1,6 +1,6 @@
 /*
   server.js — versión mínima, estable y funcional Don Francisco
-  Usuarios + Noticias + Contacto
+  Usuarios + Noticias + Contacto + Salón
 */
 
 const express = require("express");
@@ -17,7 +17,14 @@ const usuariosRouter = require("./routes/usuarios");
 const noticiasRouter = require("./routes/noticias");
 const contactoRouter = require("./routes/contacto");
 
+// ✅ NUEVO: SALÓN
+const salonRouter = require("./routes/salon");
+const adminSalonRouter = require("./routes/adminSalon");
+
 const app = express();
+
+// ✅ importante detrás de proxy (Render/NGINX/Cloudflare)
+app.set("trust proxy", 1);
 
 /* ============================================================
    CORS CONFIG ✅ FIX NETLIFY
@@ -29,7 +36,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:4200",
-  "https://donfrancisco.uy"
+  "https://donfrancisco.uy",
 ].filter(Boolean);
 
 app.use(
@@ -45,7 +52,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -68,6 +75,10 @@ app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 app.use("/usuarios", usuariosRouter);
 app.use("/noticias", noticiasRouter);
 app.use("/contacto", contactoRouter);
+
+// ✅ NUEVO: RUTAS SALÓN
+app.use("/salon", salonRouter);
+app.use("/admin/salon", adminSalonRouter);
 
 /* ============================================================
    ROOT
