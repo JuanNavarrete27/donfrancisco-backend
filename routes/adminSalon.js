@@ -30,8 +30,9 @@ function buildHoras(inicio, fin) {
   return horas;
 }
 
-// ✅ Protegemos TODO el router admin
-router.use(auth, soloAdmin);
+// ✅ Protegemos TODO el router admin (orden explícito)
+router.use(auth);
+router.use(soloAdmin);
 
 // ==============================
 // GET /admin/salon/solicitudes?estado=...
@@ -102,13 +103,11 @@ router.get("/solicitudes/:id", async (req, res) => {
 
 // ==============================
 // POST /admin/salon/solicitudes/:id/aprobar
-// - valida conflictos contra salon_reservas
-// - si no hay, inserta UNA FILA POR HORA
-// - actualiza solicitud a approved
 // ==============================
 router.post("/solicitudes/:id/aprobar", async (req, res) => {
-  const conn = await db.getConnection();
+  let conn;
   try {
+    conn = await db.getConnection();
     const { id } = req.params;
 
     await conn.beginTransaction();
@@ -141,23 +140,26 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
     } catch {
       horas = null;
     }
+
     if (!Array.isArray(horas) || horas.length === 0) {
       const inicio = String(sol.hora_inicio).slice(0, 5);
       const fin = String(sol.hora_fin).slice(0, 5);
       horas = buildHoras(inicio, fin);
     }
+
     if (!Array.isArray(horas) || horas.length === 0) {
       await conn.rollback();
       return res.status(400).json({ ok: false, error: "Horas inválidas en la solicitud." });
     }
 
-    // 3) Chequear conflictos (ya aprobado bloquea)
+    // 3) Chequear conflictos
+    const inPlaceholders = horas.map(() => "TIME(?)").join(",");
     const [conflicts] = await conn.execute(
       `
       SELECT TIME_FORMAT(hora, '%H:%i') AS hora
       FROM salon_reservas
       WHERE fecha = ?
-        AND hora IN (${horas.map(() => "TIME(?)").join(",")})
+        AND hora IN (${inPlaceholders})
       `,
       [sol.fecha, ...horas]
     );
@@ -172,7 +174,6 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
     }
 
     // 4) Insertar reservas (una fila por hora)
-    // Nota: en MySQL TIME(?) funciona si pasás "HH:MM"
     for (const h of horas) {
       await conn.execute(
         `
@@ -203,11 +204,15 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
       horas,
     });
   } catch (e) {
-    await conn.rollback();
+    try {
+      if (conn) await conn.rollback();
+    } catch {}
     console.error("POST /admin/salon/solicitudes/:id/aprobar error:", e);
     return res.status(500).json({ ok: false, error: "Error aprobando solicitud." });
   } finally {
-    conn.release();
+    try {
+      if (conn) conn.release();
+    } catch {}
   }
 });
 
@@ -228,7 +233,9 @@ router.post("/solicitudes/:id/rechazar", async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      return res.status(400).json({ ok: false, error: "No se pudo rechazar (no existe o no está pending)." });
+      return res
+        .status(400)
+        .json({ ok: false, error: "No se pudo rechazar (no existe o no está pending)." });
     }
 
     return res.json({ ok: true, message: "Solicitud rechazada." });
