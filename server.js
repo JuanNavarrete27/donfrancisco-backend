@@ -29,7 +29,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:4200",
-  "https://donfrancisco.uy/"
+  "https://donfrancisco.uy"
 ].filter(Boolean);
 
 app.use(
