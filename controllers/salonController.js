@@ -218,3 +218,60 @@ exports.adminApproveSolicitud = async (req, res) => {
         error: `Choque: ya hay una reserva aprobada en ${conflicts[0].hora}.`
       });
     }
+
+    // 3) insertar reservas (bulk insert)
+    const values = [];
+    const params = [];
+    for (const h of slots) {
+      values.push("(?, ?, ?)");
+      params.push(id, sol.fecha, h);
+    }
+
+    await conn.execute(
+      `INSERT INTO salon_reservas (solicitud_id, fecha, hora)
+       VALUES ${values.join(", ")}`,
+      params
+    );
+
+    // 4) marcar solicitud aprobada
+    await conn.execute(
+      `UPDATE salon_solicitudes SET estado = 'approved' WHERE id = ?`,
+      [id]
+    );
+
+    await conn.commit();
+    return res.json({ ok: true });
+  } catch (e) {
+    await conn.rollback();
+    console.error("adminApproveSolicitud error:", e);
+    return res.status(500).json({ ok: false, error: "Error aprobando solicitud." });
+  } finally {
+    conn.release();
+  }
+};
+
+// -------------------------
+// POST /api/admin/salon/solicitudes/:id/reject
+// -------------------------
+exports.adminRejectSolicitud = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ ok: false, error: "ID inválido." });
+
+    const [r] = await db.execute(
+      `UPDATE salon_solicitudes
+       SET estado = 'rejected'
+       WHERE id = ? AND estado = 'pending'`,
+      [id]
+    );
+
+    if (r.affectedRows === 0) {
+      return res.status(409).json({ ok: false, error: "Solo podés rechazar si está pending." });
+    }
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("adminRejectSolicitud error:", e);
+    return res.status(500).json({ ok: false, error: "Error rechazando solicitud." });
+  }
+};
