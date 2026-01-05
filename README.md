@@ -2,7 +2,7 @@
 
 Backend Node.js/Express para Don Francisco.
 
-## Endpoints de contacto (compatibles con `/contacto` y `/api/contacto`)
+## Endpoints de contacto (compatibles con `/contacto`, `/api/contacto` y `/admin/contacto`)
 
 - `GET /contacto?limit=30&offset=0`
   - Lista mensajes con paginación (`limit` por defecto 30, máx. 200; `offset` por defecto 0).

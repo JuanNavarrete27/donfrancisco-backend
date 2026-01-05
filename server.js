@@ -113,7 +113,7 @@ app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 ============================================================ */
 app.use("/usuarios", usuariosRouter);
 app.use("/noticias", noticiasRouter);
-app.use(["/contacto", "/api/contacto"], contactoRouter);
+app.use(["/contacto", "/api/contacto", "/admin/contacto"], contactoRouter);
 app.use("/salon", salonRouter);
 app.use("/admin/salon", adminSalonRouter);
 
