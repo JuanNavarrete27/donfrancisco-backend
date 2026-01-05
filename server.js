@@ -23,6 +23,20 @@ const adminSalonRouter = require("./routes/adminSalon");
 
 const app = express();
 
+/* ============================================================
+   NORMALIZAR DOBLE SLASH (evita 404 por //contacto)
+============================================================ */
+app.use((req, res, next) => {
+  const [pathPart, queryPart] = req.url.split("?", 2);
+  const normalizedPath = pathPart.replace(/\/+/g, "/");
+
+  if (normalizedPath !== pathPart) {
+    req.url = normalizedPath + (queryPart ? `?${queryPart}` : "");
+  }
+
+  next();
+});
+
 // ✅ importante detrás de proxy (Cloudflare / Nginx / Render)
 app.set("trust proxy", 1);
 
@@ -99,7 +113,7 @@ app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 ============================================================ */
 app.use("/usuarios", usuariosRouter);
 app.use("/noticias", noticiasRouter);
-app.use("/contacto", contactoRouter);
+app.use(["/contacto", "/api/contacto", "/admin/contacto"], contactoRouter);
 app.use("/salon", salonRouter);
 app.use("/admin/salon", adminSalonRouter);
 
