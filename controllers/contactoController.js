@@ -25,13 +25,17 @@ const safeOffset = (value, defaultValue = 0) => {
   return defaultValue;
 };
 
-const handleError = (res, err, code = "SERVER_ERROR", status = 500) => {
+const isDbUnavailableError = (err = {}) =>
+  ["ECONNREFUSED", "ETIMEDOUT", "ENOTFOUND", "EHOSTUNREACH"].includes(err.code);
+
+const handleError = (res, err, code = "SERVER_ERROR") => {
+  const status = isDbUnavailableError(err) ? 503 : 500;
   console.error(code + ":", err);
   return res.status(status).json({
     ok: false,
     error: {
-      code,
-      message: status === 500 ? "Error del servidor" : String(code),
+      code: isDbUnavailableError(err) ? "DB_UNAVAILABLE" : code,
+      message: status === 503 ? "Database unavailable" : "Error del servidor",
     },
   });
 };
