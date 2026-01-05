@@ -9,6 +9,37 @@ const clean = (v) => String(v ?? "").trim();
 const isValidEmail = (email) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+const safeLimit = (value, defaultValue = 30, max = 200) => {
+  const n = Number(value);
+  if (Number.isFinite(n) && n > 0) {
+    return Math.min(n, max);
+  }
+  return defaultValue;
+};
+
+const safeOffset = (value, defaultValue = 0) => {
+  const n = Number(value);
+  if (Number.isFinite(n) && n >= 0) {
+    return n;
+  }
+  return defaultValue;
+};
+
+const isDbUnavailableError = (err = {}) =>
+  ["ECONNREFUSED", "ETIMEDOUT", "ENOTFOUND", "EHOSTUNREACH"].includes(err.code);
+
+const handleError = (res, err, code = "SERVER_ERROR") => {
+  const status = isDbUnavailableError(err) ? 503 : 500;
+  console.error(code + ":", err);
+  return res.status(status).json({
+    ok: false,
+    error: {
+      code: isDbUnavailableError(err) ? "DB_UNAVAILABLE" : code,
+      message: status === 503 ? "Database unavailable" : "Error del servidor",
+    },
+  });
+};
+
 /* ============================================================
    POST /contacto
    Público — enviar mensaje
@@ -21,14 +52,20 @@ exports.crearMensaje = async (req, res) => {
     const mensaje = clean(req.body.mensaje);
 
     if (!nombre || !email || !mensaje) {
-      return res.status(400).json({ message: "Datos incompletos" });
+      return res.status(400).json({
+        ok: false,
+        error: { code: "MISSING_FIELDS", message: "Datos incompletos" },
+      });
     }
 
     if (!isValidEmail(email)) {
-      return res.status(400).json({ message: "Email inválido" });
+      return res.status(400).json({
+        ok: false,
+        error: { code: "INVALID_EMAIL", message: "Email inválido" },
+      });
     }
 
-    await db.query(
+    const [result] = await db.query(
       `
       INSERT INTO contact_messages (nombre, email, mensaje)
       VALUES (?, ?, ?)
@@ -36,11 +73,15 @@ exports.crearMensaje = async (req, res) => {
       [nombre, email, mensaje]
     );
 
-    return res.json({ message: "Mensaje enviado correctamente" });
-
+    return res.status(201).json({
+      ok: true,
+      data: {
+        id: result.insertId,
+        message: "Mensaje enviado correctamente",
+      },
+    });
   } catch (err) {
-    console.error("crearMensaje:", err);
-    return res.status(500).json({ message: "Error del servidor" });
+    return handleError(res, err, "CREAR_MENSAJE_ERROR");
   }
 };
 
@@ -52,8 +93,8 @@ exports.crearMensaje = async (req, res) => {
 exports.listarMensajes = async (req, res) => {
   try {
     const unread = String(req.query.unread) === "1";
-    const limit = Math.min(Number(req.query.limit) || 50, 200);
-    const offset = Number(req.query.offset) || 0;
+    const limit = safeLimit(req.query.limit);
+    const offset = safeOffset(req.query.offset);
 
     let sql = `
       SELECT *
@@ -69,13 +110,24 @@ exports.listarMensajes = async (req, res) => {
     sql += ` LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
+    const [[counts]] = await db.query(
+      `SELECT * FROM v_contact_admin_counts`
+    );
+
+    const total = Number(counts?.total_mensajes ?? 0);
     const [rows] = await db.query(sql, params);
 
-    return res.json(rows);
-
+    return res.json({
+      ok: true,
+      data: {
+        items: rows,
+        limit,
+        offset,
+        total,
+      },
+    });
   } catch (err) {
-    console.error("listarMensajes:", err);
-    return res.status(500).json({ message: "Error del servidor" });
+    return handleError(res, err, "LISTAR_MENSAJES_ERROR");
   }
 };
 
@@ -90,15 +142,16 @@ exports.obtenerCounts = async (req, res) => {
     );
 
     return res.json({
-      total: Number(counts.total_mensajes),
-      activos: Number(counts.total_activos),
-      no_leidos: Number(counts.no_leidos),
-      pendientes_respuesta: Number(counts.pendientes_respuesta),
+      ok: true,
+      data: {
+        total: Number(counts?.total_mensajes ?? 0),
+        activos: Number(counts?.total_activos ?? 0),
+        no_leidos: Number(counts?.no_leidos ?? 0),
+        pendientes_respuesta: Number(counts?.pendientes_respuesta ?? 0),
+      },
     });
-
   } catch (err) {
-    console.error("obtenerCounts:", err);
-    return res.status(500).json({ message: "Error del servidor" });
+    return handleError(res, err, "OBTENER_COUNTS_ERROR");
   }
 };
 
@@ -110,7 +163,10 @@ exports.marcarLeido = async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!id) {
-      return res.status(400).json({ message: "ID inválido" });
+      return res.status(400).json({
+        ok: false,
+        error: { code: "INVALID_ID", message: "ID inválido" },
+      });
     }
 
     const [result] = await db.query(
@@ -123,14 +179,18 @@ exports.marcarLeido = async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Mensaje no encontrado" });
+      return res.status(404).json({
+        ok: false,
+        error: { code: "NOT_FOUND", message: "Mensaje no encontrado" },
+      });
     }
 
-    return res.json({ message: "Mensaje marcado como leído" });
-
+    return res.json({
+      ok: true,
+      data: { message: "Mensaje marcado como leído" },
+    });
   } catch (err) {
-    console.error("marcarLeido:", err);
-    return res.status(500).json({ message: "Error del servidor" });
+    return handleError(res, err, "MARCAR_LEIDO_ERROR");
   }
 };
 
@@ -142,7 +202,10 @@ exports.eliminarMensaje = async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!id) {
-      return res.status(400).json({ message: "ID inválido" });
+      return res.status(400).json({
+        ok: false,
+        error: { code: "INVALID_ID", message: "ID inválido" },
+      });
     }
 
     const [result] = await db.query(
@@ -155,13 +218,17 @@ exports.eliminarMensaje = async (req, res) => {
     );
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ message: "Mensaje no encontrado" });
+      return res.status(404).json({
+        ok: false,
+        error: { code: "NOT_FOUND", message: "Mensaje no encontrado" },
+      });
     }
 
-    return res.json({ message: "Mensaje eliminado" });
-
+    return res.json({
+      ok: true,
+      data: { message: "Mensaje eliminado" },
+    });
   } catch (err) {
-    console.error("eliminarMensaje:", err);
-    return res.status(500).json({ message: "Error del servidor" });
+    return handleError(res, err, "ELIMINAR_MENSAJE_ERROR");
   }
 };
