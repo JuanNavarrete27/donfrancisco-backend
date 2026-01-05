@@ -23,6 +23,25 @@ const adminSalonRouter = require("./routes/adminSalon");
 
 const app = express();
 
+/* ============================================================
+   HEALTH DB HELPERS
+============================================================ */
+const db = require("./db");
+
+/* ============================================================
+   NORMALIZAR DOBLE SLASH (evita 404 por //contacto)
+============================================================ */
+app.use((req, res, next) => {
+  const [pathPart, queryPart] = req.url.split("?", 2);
+  const normalizedPath = pathPart.replace(/\/+/g, "/");
+
+  if (normalizedPath !== pathPart) {
+    req.url = normalizedPath + (queryPart ? `?${queryPart}` : "");
+  }
+
+  next();
+});
+
 // ✅ importante detrás de proxy (Cloudflare / Nginx / Render)
 app.set("trust proxy", 1);
 
@@ -99,7 +118,7 @@ app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 ============================================================ */
 app.use("/usuarios", usuariosRouter);
 app.use("/noticias", noticiasRouter);
-app.use("/contacto", contactoRouter);
+app.use(["/contacto", "/api/contacto", "/admin/contacto"], contactoRouter);
 app.use("/salon", salonRouter);
 app.use("/admin/salon", adminSalonRouter);
 
@@ -108,6 +127,28 @@ app.use("/admin/salon", adminSalonRouter);
 ============================================================ */
 app.get("/health", (req, res) => {
   res.status(200).json({ ok: true, service: "donfrancisco-backend", ts: Date.now() });
+});
+
+/* ============================================================
+   HEALTH DB
+============================================================ */
+app.get("/health/db", async (req, res) => {
+  try {
+    const timeoutMs = Number(process.env.HEALTH_DB_TIMEOUT_MS) || 5000;
+    await Promise.race([
+      db.ping(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("DB ping timeout")), timeoutMs)
+      ),
+    ]);
+    return res.status(200).json({ ok: true, data: { db: "up" } });
+  } catch (err) {
+    console.error("HEALTH_DB_ERROR:", err);
+    return res.status(503).json({
+      ok: false,
+      error: { code: "DB_UNAVAILABLE", message: err.message },
+    });
+  }
 });
 
 /* ============================================================
