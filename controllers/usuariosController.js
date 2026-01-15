@@ -11,25 +11,49 @@ function normalizarFoto(f) {
   return invalid.includes(String(f).trim()) ? null : f;
 }
 
+// ✅ username validator (permite letras/números/._- entre 3 y 20)
+function normalizarUsuario(raw) {
+  if (!raw) return "";
+  return String(raw).trim().toLowerCase();
+}
+
+function usuarioValido(u) {
+  // permitimos a-z 0-9 . _ -
+  return /^[a-z0-9._-]{3,20}$/.test(u);
+}
+
 /* ============================================================
    REGISTER
    👉 Siempre crea usuarios con rol = 'user'
+   ✅ Ahora "email" se usa como campo DB pero contiene "usuario"
 ============================================================ */
 exports.register = async (req, res) => {
-  const { nombre, apellido, email, password, telefono } = req.body;
+  const { nombre, apellido, password, telefono } = req.body;
 
-  if (!email || !password) {
+  // ✅ Compatibilidad: puede venir "usuario" (nuevo) o "email" (viejo)
+  const usuario = normalizarUsuario(req.body.usuario || req.body.email);
+
+  if (!usuario || !password) {
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   }
 
+  // ✅ Validación de usuario
+  if (!usuarioValido(usuario)) {
+    return res.status(400).json({
+      error: "Usuario inválido (3-20, letras/números y . _ -)"
+    });
+  }
+
   try {
+    // ⚠️ Seguimos usando la columna "email" como identificador único,
+    // pero ahora guarda el usuario (ej: "jnavarrete")
     const [exists] = await db.query(
       "SELECT id FROM usuarios WHERE email = ?",
-      [email]
+      [usuario]
     );
 
     if (exists.length > 0) {
-      return res.status(409).json({ error: "Email ya registrado" });
+      return res.status(409).json({ error: "Usuario ya registrado" });
     }
 
     const hash = bcrypt.hashSync(password, 10);
@@ -40,7 +64,7 @@ exports.register = async (req, res) => {
       [
         nombre || "",
         apellido || "",
-        email,
+        usuario,         // ✅ se guarda en email (pero es usuario)
         hash,
         "user",          // 🔒 rol fijo
         telefono || ""
@@ -60,18 +84,27 @@ exports.register = async (req, res) => {
 
 /* ============================================================
    LOGIN
+   ✅ Ahora login por "usuario" (guardado en email)
 ============================================================ */
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
 
-  if (!email || !password) {
+  // ✅ Compatibilidad: puede venir "usuario" (nuevo) o "email" (viejo)
+  const usuario = normalizarUsuario(req.body.usuario || req.body.email);
+
+  if (!usuario || !password) {
     return res.status(400).json({ error: "Faltan datos" });
+  }
+
+  // ✅ Validación
+  if (!usuarioValido(usuario)) {
+    return res.status(401).json({ error: "Credenciales inválidas" });
   }
 
   try {
     const [rows] = await db.query(
       "SELECT * FROM usuarios WHERE email = ?",
-      [email]
+      [usuario]
     );
 
     if (rows.length === 0) {
@@ -89,9 +122,9 @@ exports.login = async (req, res) => {
         id: user.id,
         nombre: user.nombre,
         apellido: user.apellido,
-        email: user.email,
+        email: user.email, // ✅ acá queda guardado el "usuario"
         telefono: user.telefono,
-        rol: user.rol,                 // 👈 clave para permisos
+        rol: user.rol,
         foto: normalizarFoto(user.foto)
       },
       process.env.JWT_SECRET || "changeme",
@@ -104,7 +137,7 @@ exports.login = async (req, res) => {
         id: user.id,
         nombre: user.nombre || "",
         apellido: user.apellido || "",
-        email: user.email,
+        email: user.email, // ✅ sigue llamándose email pero contiene usuario
         telefono: user.telefono || "",
         rol: user.rol,
         foto: normalizarFoto(user.foto)
@@ -139,7 +172,7 @@ exports.getMe = async (req, res) => {
       id: u.id,
       nombre: u.nombre || "",
       apellido: u.apellido || "",
-      email: u.email,
+      email: u.email, // ✅ sigue siendo el username
       telefono: u.telefono || "",
       rol: u.rol,
       foto: normalizarFoto(u.foto)

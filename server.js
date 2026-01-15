@@ -1,6 +1,6 @@
 /*
   server.js — versión estable y lista para producción (Starlight/Hyperlift)
-  Usuarios + Noticias + Contacto + Salón
+  Usuarios + Noticias + Contacto + Salón + FTP Empleo
 */
 
 const express = require("express");
@@ -20,6 +20,9 @@ const contactoRouter = require("./routes/contacto");
 // ✅ SALÓN
 const salonRouter = require("./routes/salon");
 const adminSalonRouter = require("./routes/adminSalon");
+
+// ✅ FTP EMPLEO (NEW)
+const jobApplicationsRouter = require("./routes/jobApplications.routes");
 
 const app = express();
 
@@ -48,7 +51,6 @@ function normalizeOrigin(o) {
   return String(o).replace(/\/$/, ""); // saca slash final
 }
 
-// Permite exactamente dominios definidos y también subdominios de donfrancisco.uy si querés.
 function isAllowedOrigin(origin, allowed) {
   const o = normalizeOrigin(origin);
 
@@ -71,7 +73,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   "http://localhost:4200",
-  "https://api.donfrancisco.uy"
+  "https://api.donfrancisco.uy",
 ]
   .filter(Boolean)
   .map(normalizeOrigin);
@@ -95,8 +97,8 @@ app.use(
   })
 );
 
-// ✅ responder preflight sin duplicar config rara
-app.options("*", (req, res) => res.sendStatus(204));
+// ✅ PRE-FLIGHT ULTRA ESTABLE (NO uses "*" string)
+app.options(/.*/, (req, res) => res.sendStatus(204));
 
 /* ============================================================
    BODY PARSER
@@ -114,14 +116,21 @@ app.use("/avatars", express.static(path.join(__dirname, "avatars")));
 app.use("/usuarios", usuariosRouter);
 app.use("/noticias", noticiasRouter);
 app.use(["/contacto", "/api/contacto"], contactoRouter);
+
+// ✅ SALÓN
 app.use("/salon", salonRouter);
 app.use("/admin/salon", adminSalonRouter);
+
+// ✅ FTP EMPLEO (NEW)  Base: /api/admin/empleo
+app.use("/api/admin/empleo", jobApplicationsRouter);
 
 /* ============================================================
    HEALTHCHECK (útil en Starlight)
 ============================================================ */
 app.get("/health", (req, res) => {
-  res.status(200).json({ ok: true, service: "donfrancisco-backend", ts: Date.now() });
+  res
+    .status(200)
+    .json({ ok: true, service: "donfrancisco-backend", ts: Date.now() });
 });
 
 /* ============================================================

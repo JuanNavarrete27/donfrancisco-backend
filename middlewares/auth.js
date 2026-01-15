@@ -1,20 +1,45 @@
 // middlewares/auth.js
+// ============================================================
+// DON FRANCISCO — Auth middleware estable
+// ✅ Compatibilidad TOTAL:
+//    - const auth = require("./auth")          -> auth(req,res,next)
+//    - const { authRequired } = require("./auth") -> authRequired(...)
+// ============================================================
+
 const jwt = require("jsonwebtoken");
 
-module.exports = (req, res, next) => {
-  const h = req.headers["authorization"];
-  if (!h) return res.status(401).json({ error: "No token provided" });
+function authRequired(req, res, next) {
+  try {
+    const h = req.headers["authorization"] || req.headers["Authorization"];
 
-  const parts = h.split(" ");
-  if (parts.length !== 2 || parts[0] !== "Bearer")
-    return res.status(401).json({ error: "Token mal formado" });
+    if (!h) {
+      return res.status(401).json({ ok: false, error: "NO_TOKEN" });
+    }
 
-  const token = parts[1];
+    const parts = String(h).split(" ");
+    if (parts.length !== 2 || parts[0] !== "Bearer") {
+      return res.status(401).json({ ok: false, error: "TOKEN_MALFORMED" });
+    }
 
-  jwt.verify(token, process.env.JWT_SECRET || "changeme", (err, decoded) => {
-    if (err) return res.status(401).json({ error: "Token inválido o expirado" });
+    const token = parts[1]?.trim();
+    if (!token) {
+      return res.status(401).json({ ok: false, error: "NO_TOKEN" });
+    }
 
-    req.user = decoded;
-    next();
-  });
-};
+    const secret = process.env.JWT_SECRET || "changeme"; // si querés producción estricta, lo ajustamos
+    const decoded = jwt.verify(token, secret);
+
+    req.user = decoded?.user || decoded;
+    return next();
+  } catch (err) {
+    return res.status(401).json({ ok: false, error: "INVALID_OR_EXPIRED_TOKEN" });
+  }
+}
+
+/* ============================================================
+   ✅ EXPORT COMPATIBLE CON TODO TU BACKEND
+   - module.exports = función (para require directo)
+   - module.exports.authRequired = función (para destructuring)
+============================================================ */
+module.exports = authRequired;
+module.exports.authRequired = authRequired;
