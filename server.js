@@ -21,7 +21,7 @@ const contactoRouter = require("./routes/contacto");
 const salonRouter = require("./routes/salon");
 const adminSalonRouter = require("./routes/adminSalon");
 
-// ✅ FTP EMPLEO (NEW)
+// ✅ FTP EMPLEO
 const jobApplicationsRouter = require("./routes/jobApplications.routes");
 
 const app = express();
@@ -40,7 +40,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ✅ importante detrás de proxy (Cloudflare / Nginx / Render)
+// ✅ importante detrás de proxy (Cloudflare / Nginx / Fly / Render)
 app.set("trust proxy", 1);
 
 /* ============================================================
@@ -48,7 +48,7 @@ app.set("trust proxy", 1);
 ============================================================ */
 function normalizeOrigin(o) {
   if (!o) return "";
-  return String(o).replace(/\/$/, ""); // saca slash final
+  return String(o).replace(/\/$/, "");
 }
 
 function isAllowedOrigin(origin, allowed) {
@@ -97,13 +97,14 @@ app.use(
   })
 );
 
-// ✅ PRE-FLIGHT ULTRA ESTABLE (NO uses "*" string)
+// ✅ PRE-FLIGHT ULTRA ESTABLE
 app.options(/.*/, (req, res) => res.sendStatus(204));
 
 /* ============================================================
    BODY PARSER
 ============================================================ */
 app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true }));
 
 /* ============================================================
    STATIC FILES
@@ -121,16 +122,23 @@ app.use(["/contacto", "/api/contacto"], contactoRouter);
 app.use("/salon", salonRouter);
 app.use("/admin/salon", adminSalonRouter);
 
-// ✅ FTP EMPLEO (NEW)  Base: /api/admin/empleo
+// ✅ FTP EMPLEO (BASE REAL)
 app.use("/api/admin/empleo", jobApplicationsRouter);
+
+// ✅ FTP EMPLEO (ALIAS RETROCOMPATIBLE) ⭐⭐⭐
+// Esto evita 404 si el frontend quedó pegando sin /api
+app.use("/admin/empleo", jobApplicationsRouter);
+
+// ✅ (Opcional) Ping rápido para confirmar base montada
+app.get(["/api/admin/empleo", "/admin/empleo"], (req, res) => {
+  res.status(200).json({ ok: true, module: "ftp-empleo" });
+});
 
 /* ============================================================
    HEALTHCHECK (útil en Starlight)
 ============================================================ */
 app.get("/health", (req, res) => {
-  res
-    .status(200)
-    .json({ ok: true, service: "donfrancisco-backend", ts: Date.now() });
+  res.status(200).json({ ok: true, service: "donfrancisco-backend", ts: Date.now() });
 });
 
 /* ============================================================
@@ -141,13 +149,25 @@ app.get("/", (req, res) => {
 });
 
 /* ============================================================
+   404 HANDLER (para que nunca te quede “silencioso”)
+============================================================ */
+app.use((req, res) => {
+  return res.status(404).json({
+    ok: false,
+    error: "NOT_FOUND",
+    path: req.originalUrl,
+  });
+});
+
+/* ============================================================
    ERROR HANDLER (incluye CORS)
 ============================================================ */
 app.use((err, req, res, next) => {
   if (err && err.message === "Not allowed by CORS") {
     return res.status(403).json({ ok: false, error: "CORS_BLOCKED" });
   }
-  console.error(err);
+
+  console.error("[SERVER_ERROR]", err);
   res.status(500).json({ ok: false, error: "SERVER_ERROR" });
 });
 
