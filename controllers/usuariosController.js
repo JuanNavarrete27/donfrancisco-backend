@@ -11,33 +11,75 @@ function normalizarFoto(f) {
   return invalid.includes(String(f).trim()) ? null : f;
 }
 
-// ✅ username validator (permite letras/números/._- entre 3 y 20)
 function normalizarUsuario(raw) {
   if (!raw) return "";
   return String(raw).trim().toLowerCase();
 }
 
 function usuarioValido(u) {
-  // permitimos a-z 0-9 . _ -
   return /^[a-z0-9._-]{3,20}$/.test(u);
+}
+
+// ✅ Normalización de rol (igual espíritu que middlewares/role.js)
+function normalizeRoleName(raw) {
+  const r = String(raw || "").toLowerCase().trim();
+
+  if (r === "administrador" || r === "administrator") return "admin";
+  if (r === "superadmin") return "admin";
+  if (r === "owner") return "admin";
+  if (r === "root") return "admin";
+  if (r.includes("admin")) return "admin";
+
+  if (r === "funcionario" || r === "employee" || r === "empleado" || r === "worker")
+    return "funcionario";
+
+  return r || "staff";
+}
+
+function buildAccessForRole(roleRaw) {
+  const role = normalizeRoleName(roleRaw);
+
+  const isAdmin = role === "admin";
+  const isFuncionario = role === "funcionario";
+
+  // ✅ estos son los “botones” que te pidió (paths front típicos)
+  // Ajustalos si tus rutas front son distintas (no rompe nada igual)
+  const linksFuncionario = [
+    { label: "Reservas de Salón (Lectura)", path: "/admin/salon" },
+    { label: "Mensajes de Contacto (Lectura)", path: "/admin/contacto" },
+    { label: "FTP Empleo (Lectura + Export CSV)", path: "/admin/empleo" },
+  ];
+
+  const access = {
+    role,
+
+    // ✅ accesos funcionales
+    canReadSalonAdmin: isAdmin || isFuncionario,
+    canWriteSalonAdmin: isAdmin, // funcionario NO
+    canReadContactoAdmin: isAdmin || isFuncionario,
+    canWriteContactoAdmin: isAdmin, // funcionario NO (no marcar leído ni borrar)
+    canReadFtpEmpleo: isAdmin || isFuncionario,
+    canExportFtpEmpleoCsv: isAdmin || isFuncionario,
+    canCrudFtpEmpleo: isAdmin, // funcionario NO
+
+    // ✅ para que el front muestre botones (lo pidió explícito)
+    quickLinks: isFuncionario ? linksFuncionario : [],
+  };
+
+  return access;
 }
 
 /* ============================================================
    REGISTER
-   👉 Siempre crea usuarios con rol = 'user'
-   ✅ Ahora "email" se usa como campo DB pero contiene "usuario"
 ============================================================ */
 exports.register = async (req, res) => {
   const { nombre, apellido, password, telefono } = req.body;
-
-  // ✅ Compatibilidad: puede venir "usuario" (nuevo) o "email" (viejo)
   const usuario = normalizarUsuario(req.body.usuario || req.body.email);
 
   if (!usuario || !password) {
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   }
 
-  // ✅ Validación de usuario
   if (!usuarioValido(usuario)) {
     return res.status(400).json({
       error: "Usuario inválido (3-20, letras/números y . _ -)"
@@ -45,8 +87,6 @@ exports.register = async (req, res) => {
   }
 
   try {
-    // ⚠️ Seguimos usando la columna "email" como identificador único,
-    // pero ahora guarda el usuario (ej: "jnavarrete")
     const [exists] = await db.query(
       "SELECT id FROM usuarios WHERE email = ?",
       [usuario]
@@ -64,9 +104,9 @@ exports.register = async (req, res) => {
       [
         nombre || "",
         apellido || "",
-        usuario,         // ✅ se guarda en email (pero es usuario)
+        usuario,
         hash,
-        "user",          // 🔒 rol fijo
+        "user",
         telefono || ""
       ]
     );
@@ -84,19 +124,15 @@ exports.register = async (req, res) => {
 
 /* ============================================================
    LOGIN
-   ✅ Ahora login por "usuario" (guardado en email)
 ============================================================ */
 exports.login = async (req, res) => {
   const { password } = req.body;
-
-  // ✅ Compatibilidad: puede venir "usuario" (nuevo) o "email" (viejo)
   const usuario = normalizarUsuario(req.body.usuario || req.body.email);
 
   if (!usuario || !password) {
     return res.status(400).json({ error: "Faltan datos" });
   }
 
-  // ✅ Validación
   if (!usuarioValido(usuario)) {
     return res.status(401).json({ error: "Credenciales inválidas" });
   }
@@ -122,7 +158,7 @@ exports.login = async (req, res) => {
         id: user.id,
         nombre: user.nombre,
         apellido: user.apellido,
-        email: user.email, // ✅ acá queda guardado el "usuario"
+        email: user.email,
         telefono: user.telefono,
         rol: user.rol,
         foto: normalizarFoto(user.foto)
@@ -137,7 +173,7 @@ exports.login = async (req, res) => {
         id: user.id,
         nombre: user.nombre || "",
         apellido: user.apellido || "",
-        email: user.email, // ✅ sigue llamándose email pero contiene usuario
+        email: user.email,
         telefono: user.telefono || "",
         rol: user.rol,
         foto: normalizarFoto(user.foto)
@@ -152,6 +188,7 @@ exports.login = async (req, res) => {
 
 /* ============================================================
    GET ME (perfil del usuario logueado)
+   ✅ AGREGADO access para botones/paths (funcionario)
 ============================================================ */
 exports.getMe = async (req, res) => {
   try {
@@ -168,14 +205,20 @@ exports.getMe = async (req, res) => {
 
     const u = rows[0];
 
+    // ✅ NUEVO: access / quickLinks para rol funcionario
+    const access = buildAccessForRole(u.rol);
+
     res.json({
       id: u.id,
       nombre: u.nombre || "",
       apellido: u.apellido || "",
-      email: u.email, // ✅ sigue siendo el username
+      email: u.email,
       telefono: u.telefono || "",
       rol: u.rol,
-      foto: normalizarFoto(u.foto)
+      foto: normalizarFoto(u.foto),
+
+      // ✅ agregado sin romper nada
+      access
     });
 
   } catch (err) {

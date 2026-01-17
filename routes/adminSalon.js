@@ -3,8 +3,9 @@ const express = require("express");
 const router = express.Router();
 const db = require("../db");
 
-const auth = require("../middlewares/auth");
-const soloAdmin = require("../middlewares/soloAdmin");
+// ✅ auth + roles
+const { authRequired } = require("../middlewares/auth");
+const { requireRole } = require("../middlewares/role");
 
 // ==============================
 // Helpers (mismo criterio)
@@ -30,14 +31,21 @@ function buildHoras(inicio, fin) {
   return horas;
 }
 
-// ✅ Protegemos TODO el router admin (orden explícito)
-router.use(auth);
-router.use(soloAdmin);
+// ✅ PROTECCIÓN BASE: autenticado siempre
+router.use(authRequired);
+
+// ------------------------------------------------------------
+// ✅ READ: admin + funcionario
+// ✅ WRITE: solo admin
+// ------------------------------------------------------------
+const ROLES_READ = ["admin", "funcionario"];
+const ROLES_ADMIN = ["admin"];
 
 // ==============================
 // GET /admin/salon/solicitudes?estado=...
+// (LECTURA: admin + funcionario)
 // ==============================
-router.get("/solicitudes", async (req, res) => {
+router.get("/solicitudes", requireRole(...ROLES_READ), async (req, res) => {
   try {
     const { estado } = req.query;
 
@@ -70,8 +78,9 @@ router.get("/solicitudes", async (req, res) => {
 
 // ==============================
 // GET /admin/salon/solicitudes/:id
+// (LECTURA: admin + funcionario)
 // ==============================
-router.get("/solicitudes/:id", async (req, res) => {
+router.get("/solicitudes/:id", requireRole(...ROLES_READ), async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -103,8 +112,9 @@ router.get("/solicitudes/:id", async (req, res) => {
 
 // ==============================
 // POST /admin/salon/solicitudes/:id/aprobar
+// (ESCRITURA: solo admin)
 // ==============================
-router.post("/solicitudes/:id/aprobar", async (req, res) => {
+router.post("/solicitudes/:id/aprobar", requireRole(...ROLES_ADMIN), async (req, res) => {
   let conn;
   try {
     conn = await db.getConnection();
@@ -112,7 +122,6 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
 
     await conn.beginTransaction();
 
-    // 1) Traer solicitud
     const [rows] = await conn.execute(
       `
       SELECT id, fecha, hora_inicio, hora_fin, horas_json, estado
@@ -133,7 +142,6 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
       return res.status(400).json({ ok: false, error: "La solicitud no está en pending." });
     }
 
-    // 2) Horas a bloquear
     let horas = null;
     try {
       horas = sol.horas_json ? JSON.parse(sol.horas_json) : null;
@@ -152,7 +160,6 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Horas inválidas en la solicitud." });
     }
 
-    // 3) Chequear conflictos
     const inPlaceholders = horas.map(() => "TIME(?)").join(",");
     const [conflicts] = await conn.execute(
       `
@@ -173,7 +180,6 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
       });
     }
 
-    // 4) Insertar reservas (una fila por hora)
     for (const h of horas) {
       await conn.execute(
         `
@@ -184,7 +190,6 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
       );
     }
 
-    // 5) Marcar solicitud approved
     await conn.execute(
       `
       UPDATE salon_solicitudes
@@ -218,8 +223,9 @@ router.post("/solicitudes/:id/aprobar", async (req, res) => {
 
 // ==============================
 // POST /admin/salon/solicitudes/:id/rechazar
+// (ESCRITURA: solo admin)
 // ==============================
-router.post("/solicitudes/:id/rechazar", async (req, res) => {
+router.post("/solicitudes/:id/rechazar", requireRole(...ROLES_ADMIN), async (req, res) => {
   try {
     const { id } = req.params;
 

@@ -5,7 +5,7 @@
 //
 // Roles:
 //  - admin: CRUD + export
-//  - otros: ver + export
+//  - funcionario: ver + export (SOLO LECTURA)
 // ============================================================
 
 const express = require("express");
@@ -17,25 +17,19 @@ const { requireRole } = require("../middlewares/role");
 
 const router = express.Router();
 
-// ------------------------------------------------------------
-// ROLES (ajustá si usás otros nombres)
-// ------------------------------------------------------------
-// ✅ VIEW: cualquiera que pueda entrar a ver y exportar
+// ✅ VIEW (ver + export)
 const ROLES_VIEW = [
   "admin",
   "staff",
-  "user",           // ✅ agregado (clave)
-  "funcionario",
+  "user",
+  "funcionario", // ✅ NUEVO
   "rrhh",
   "manager",
 ];
 
-// ✅ ADMIN: solo admin
+// ✅ ADMIN (CRUD)
 const ROLES_ADMIN = ["admin"];
 
-// ------------------------------------------------------------
-// ✅ VALIDACIÓN EXTRA para que no explote Express
-// ------------------------------------------------------------
 function ensureFn(fn, name) {
   if (typeof fn !== "function") {
     throw new Error(`Controller method missing: ${name} (is ${typeof fn})`);
@@ -49,10 +43,7 @@ ensureFn(controller.create, "create");
 ensureFn(controller.update, "update");
 ensureFn(controller.remove, "remove");
 
-// ============================================================
-// GET LIST (ver)
-// GET /applications?query=&prequal=&area=&limit=&offset=
-// ============================================================
+// ✅ LIST (VIEW)
 router.get(
   "/applications",
   authRequired,
@@ -60,11 +51,7 @@ router.get(
   controller.list
 );
 
-// ============================================================
-// ✅ EXPORT CSV (ver + export)
-// ⚠️ IMPORTANTE: debe estar ANTES de /applications/:id
-// GET /applications/export.csv?query=&prequal=&area=
-// ============================================================
+// ✅ EXPORT CSV (VIEW + EXPORT)
 router.get(
   "/applications/export.csv",
   authRequired,
@@ -72,10 +59,7 @@ router.get(
   controller.exportCsv
 );
 
-// ============================================================
-// GET ONE (ver)
-// GET /applications/:id
-// ============================================================
+// ✅ GET ONE (VIEW)
 router.get(
   "/applications/:id",
   authRequired,
@@ -83,10 +67,7 @@ router.get(
   controller.getById
 );
 
-// ============================================================
-// CREATE (admin only)
-// POST /applications
-// ============================================================
+// ✅ CREATE (ADMIN ONLY)
 router.post(
   "/applications",
   authRequired,
@@ -94,10 +75,7 @@ router.post(
   controller.create
 );
 
-// ============================================================
-// UPDATE (admin only)
-// PUT /applications/:id
-// ============================================================
+// ✅ UPDATE (ADMIN ONLY)
 router.put(
   "/applications/:id",
   authRequired,
@@ -105,10 +83,7 @@ router.put(
   controller.update
 );
 
-// ============================================================
-// DELETE (admin only)
-// DELETE /applications/:id
-// ============================================================
+// ✅ DELETE (ADMIN ONLY)
 router.delete(
   "/applications/:id",
   authRequired,

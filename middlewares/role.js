@@ -9,18 +9,30 @@
 function normalizeRoleName(raw) {
   const r = String(raw || "").toLowerCase().trim();
 
+  // ---------------------------
+  // Admin aliases
+  // ---------------------------
   if (r === "administrador" || r === "administrator") return "admin";
   if (r === "superadmin") return "admin";
   if (r === "owner") return "admin";
   if (r === "root") return "admin";
-
   if (r.includes("admin")) return "admin";
 
+  // ---------------------------
+  // Funcionario aliases
+  // ---------------------------
+  if (r === "funcionario") return "funcionario";
+  if (r === "employee") return "funcionario";
+  if (r === "empleado") return "funcionario";
+  if (r === "worker") return "funcionario";
+
+  // ---------------------------
+  // Defaults
+  // ---------------------------
   return r || "staff";
 }
 
 function extractRole(req) {
-  // ✅ lo normal: req.user.role
   const u = req.user || {};
 
   const role =
@@ -40,8 +52,6 @@ function requireRole(...allowedRoles) {
 
   return (req, res, next) => {
     try {
-      // ⚠️ si tu authRequired no setea req.user,
-      // esto te va a quedar como staff y bloqueará rutas admin
       const currentRole = extractRole(req);
 
       if (!allowed.length) return next();
@@ -63,4 +73,4 @@ function requireRole(...allowedRoles) {
   };
 }
 
-module.exports = { requireRole };
+module.exports = { requireRole, extractRole, normalizeRoleName };
