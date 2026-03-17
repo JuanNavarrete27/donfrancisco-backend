@@ -24,6 +24,9 @@ const adminSalonRouter = require("./routes/adminSalon");
 // ✅ FTP EMPLEO
 const jobApplicationsRouter = require("./routes/jobApplications.routes");
 
+// ✅ LOCALES
+const localesRouter = require("./routes/locales");
+
 const app = express();
 
 /* ============================================================
@@ -66,6 +69,7 @@ function isAllowedOrigin(origin, allowed) {
    CORS CONFIG ✅ NETLIFY + CLOUDFLARE
 ============================================================ */
 const allowedOrigins = [
+  "http://localhost:4200/",
   "https://donfrancisco.netlify.app",
   "https://donfrancisco.uy",
   process.env.FRONTEND_URL,
@@ -91,7 +95,7 @@ app.use(
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     optionsSuccessStatus: 204,
   })
@@ -128,6 +132,9 @@ app.use("/api/admin/empleo", jobApplicationsRouter);
 // ✅ FTP EMPLEO (ALIAS RETROCOMPATIBLE) ⭐⭐⭐
 // Esto evita 404 si el frontend quedó pegando sin /api
 app.use("/admin/empleo", jobApplicationsRouter);
+
+// ✅ LOCALES
+app.use("/api", localesRouter);
 
 // ✅ (Opcional) Ping rápido para confirmar base montada
 app.get(["/api/admin/empleo", "/admin/empleo"], (req, res) => {
@@ -178,4 +185,6 @@ const PORT = Number(process.env.PORT) || 8080;
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`📋 CORS methods permitidos: GET, POST, PUT, PATCH, DELETE, OPTIONS`);
+  console.log(`🌐 Orígenes permitidos: ${allowedOrigins.join(', ') || 'todos'}`);
 });

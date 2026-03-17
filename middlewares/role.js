@@ -27,6 +27,21 @@ function normalizeRoleName(raw) {
   if (r === "worker") return "funcionario";
 
   // ---------------------------
+  // Local role aliases
+  // ---------------------------
+  if (r === "local") return "local";
+  if (r === "locale") return "local";
+  if (r === "local_admin") return "local";
+  if (r === "business_owner") return "local";
+  if (r === "negocio") return "local";
+
+  // ---------------------------
+  // Marketing aliases
+  // ---------------------------
+  if (r === "marketing") return "marketing";
+  if (r === "marketin") return "marketing";
+
+  // ---------------------------
   // Defaults
   // ---------------------------
   return r || "staff";

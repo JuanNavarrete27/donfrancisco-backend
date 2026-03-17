@@ -41,13 +41,22 @@ function buildAccessForRole(roleRaw) {
 
   const isAdmin = role === "admin";
   const isFuncionario = role === "funcionario";
+  const isLocal = role === "local";
+  const isMarketing = role === "marketing";
 
-  // ✅ estos son los “botones” que te pidió (paths front típicos)
+  // ✅ estos son los "botones" que te pidió (paths front típicos)
   // Ajustalos si tus rutas front son distintas (no rompe nada igual)
   const linksFuncionario = [
     { label: "Reservas de Salón (Lectura)", path: "/admin/salon" },
     { label: "Mensajes de Contacto (Lectura)", path: "/admin/contacto" },
     { label: "FTP Empleo (Lectura + Export CSV)", path: "/admin/empleo" },
+  ];
+
+  const linksLocal = [
+    { label: "Mi Local", path: "/profile/local" },
+    { label: "Editar Información", path: "/profile/local/edit" },
+    { label: "Galería de Fotos", path: "/profile/local/gallery" },
+    { label: "Menú/Productos", path: "/profile/local/menu" },
   ];
 
   const access = {
@@ -62,8 +71,21 @@ function buildAccessForRole(roleRaw) {
     canExportFtpEmpleoCsv: isAdmin || isFuncionario,
     canCrudFtpEmpleo: isAdmin, // funcionario NO
 
+    // ✅ accesos para locales
+    canManageOwnLocal: isLocal,
+    canReadOwnLocal: isLocal,
+    canEditOwnLocalDetails: isLocal,
+    canManageOwnLocalMedia: isLocal,
+
+    // ✅ accesos admin para locales
+    canManageAllLocales: isAdmin,
+    canAssignUsersToLocales: isAdmin,
+
+    // ✅ accesos marketing (noticias)
+    canManageNoticias: isAdmin || isMarketing,
+
     // ✅ para que el front muestre botones (lo pidió explícito)
-    quickLinks: isFuncionario ? linksFuncionario : [],
+    quickLinks: isFuncionario ? linksFuncionario : isLocal ? linksLocal : [],
   };
 
   return access;
